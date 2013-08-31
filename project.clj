@@ -1,0 +1,32 @@
+(def shared
+  '[
+    [org.clojure/tools.logging "0.2.6"]
+    [org.clojure/core.incubator "0.1.2"]
+
+    [clomponents "0.5.0"]
+    [compojure "1.1.5"]
+    ])
+
+
+(defproject clopp "0.2.0"
+  :description "parenjin : "
+
+  :license {:name "Eclipse Public License"
+            :url "http://www.eclipse.org/legal/epl-v10.html"}
+
+  :min-lein-version "2.0.0"
+
+  :url "http://github.com/mccraigmccraig/parenjin"
+  :scm {:name "git"
+        :url "http://github.com/mccraigmccraig/parenjin"}
+
+  :plugins [[lein-midje "3.0.1"]]
+
+  :dependencies ~(conj shared '[org.clojure/clojure "1.5.1"])
+
+  :aliases {"with-all-dev" ["with-profile" "1.4,dev:1.5,dev"]}
+  :profiles {:dev {:dependencies [[midje "1.5.1"]]}
+             :production {}
+             :1.4 {:dependencies [[org.clojure/clojure "1.4.0"]]}
+             :1.5 {:dependencies [[org.clojure/clojure "1.5.1"]]}}
+  )
