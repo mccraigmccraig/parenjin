@@ -31,12 +31,6 @@
         deref
         :bar) => ..model-type..)
 
-  (fact "defquery should register a query"
-    (-> (defquery m :q ..query..)
-        :queries*
-        deref
-        :q) => ..query..)
-
   (fact "defjob should register a job"
     (-> (defjob m :j ..job..)
         :jobs*
@@ -56,8 +50,6 @@
                                                  (requires-connector :b-conn ..b-conn-type..)
                                                  (requires-enjin :a-ds ..a-ds-type..)
                                                  (requires-enjin :b-ds ..b-ds-type..)
-                                                 (defquery :a-q ..a-q..)
-                                                 (defquery :b-q ..b-q..)
                                                  (defjob :a-job ..a-job..)
                                                  (defjob :b-job ..b-job..)
                                                  (defservice :a-service ..a-service..)
@@ -70,7 +62,6 @@
     (:param-reqs pm) => {:a-param ..a-param-type.. :b-param ..b-param-type..}
     (:connector-reqs pm) => {:a-conn ..a-conn-type.. :b-conn ..b-conn-type..}
     (:enjin-reqs pm) => {:a-ds ..a-ds-type.. :b-ds ..b-ds-type..}
-    (:queries pm) => {:a-q ..a-q.. :b-q ..b-q..}
     (:jobs pm) => {:a-job ..a-job.. :b-job ..b-job..}
     (:services pm) => {:a-service ..a-service.. :b-service ..b-service..}
     (:webservices pm) => {:a-webservice ..a-webservice.. :b-webservice ..b-webservice..}))
@@ -85,9 +76,6 @@
 
     (requires-enjin m :ds-a ..model-a-type..)
     (requires-enjin m :ds-b ..model-b-type..)
-
-    (defquery m :q-a ..query-a..)
-    (defquery m :q-b ..query-b..)
 
     (defjob m :j-a ..job-a..)
     (defjob m :j-b ..job-b..)
@@ -109,7 +97,6 @@
                                    :params {:param-a ..param-a.. :param-b ..param-b..}
                                    :connectors {:conn-a ..conn-a.. :conn-b ..conn-b..}
                                    :enjin-deps {:ds-a ..ds-a.. :ds-b ..ds-b..}
-                                   :queries {:q-a ..query-a.. :q-b ..query-b..}
                                    :jobs {:j-a ..job-a.. :j-b ..job-b..}
                                    :services {:serv-a ..serv-a.. :serv-b ..serv-b..}
                                    :webservices {:ws-a ..ws-a.. :ws-b ..ws-b..}) => ..ds..)))

@@ -35,7 +35,6 @@
                            :params ..params..
                            :connectors ..connectors..
                            :enjin-deps ..enjin-deps..
-                           :queries ..queries..
                            :jobs ..jobs..
                            :services ..services..
                            :webservices ..webservices..) => true
@@ -122,7 +121,6 @@
                                :params (or (:params overrides) ..params..)
                                :connectors (or (:connectors overrides) ..connectors..)
                                :enjin-deps (or (:enjin-deps overrides) ..enjin-deps..)
-                               :queries (or (:queries overrides) ..queries..)
                                :jobs (or (:jobs overrides) ..jobs..)
                                :services (or (:services overrides) ..services..)
                                :webservices (or (:webservices overrides) ..webservices..)))
@@ -132,7 +130,6 @@
   (params (csd)) => ..params..
   (connectors (csd)) => ..connectors..
   (enjin-deps (csd)) => ..enjin-deps..
-  (queries (csd)) => ..queries..
   (jobs (csd)) => ..jobs..
   (services (csd)) => ..services..
   (webservices (csd)) => ..webservices..
@@ -141,27 +138,9 @@
                              :params ..params..
                              :connectors ..connectors..
                              :enjin-deps ..enjin-deps..
-                             :queries ..queries..
                              :jobs ..jobs..
                              :services ..services..
                              :webservices ..webservices..) => true))
-
-(fact "query and query* should run a query without args"
-  (let [ds (csd {:queries {:foo (fn [enjin]
-                                  (nil? enjin) => false
-                                  ..result..)}})]
-
-    (query* ds :foo nil) => ..result..
-    (query ds :foo) => ..result..))
-
-(fact "query and query* should run a query with args"
-  (let [ds (csd {:queries {:foo (fn [enjin & args]
-                                  (nil? enjin) => false
-                                  args => [..arg-a.. ..arg-b..]
-                                  ..result..)}})]
-
-    (query* ds :foo [..arg-a.. ..arg-b..]) => ..result..
-    (query ds :foo ..arg-a.. ..arg-b..) => ..result..))
 
 (defn fsd
   [& [overrides]]
@@ -169,7 +148,6 @@
                         :params* (or (:params overrides) ..params..)
                         :connectors* (or (:connectors overrides) ..connectors..)
                         :enjin-deps* (or (:enjin-deps overrides) ..enjin-deps..)
-                        :queries* (or (:queries overrides) ..queries..)
                         :jobs* (or (:jobs overrides) ..jobs..)
                         :services* (or (:services overrides) ..services..)
                         :webservices* (or (:webservices overrides) ..webservices..)

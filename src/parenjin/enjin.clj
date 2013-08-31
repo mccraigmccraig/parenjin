@@ -40,14 +40,13 @@
    :params true
    :connectors true
    :enjin-deps true
-   :queries true
    :jobs true
    :services true
    :webservices true})
 
 (defn- check-requirements
   "check that the requirements declared in the enjins model are met"
-  [& {:keys [model params connectors enjin-deps queries jobs services webservices] :as args}]
+  [& {:keys [model params connectors enjin-deps jobs services webservices] :as args}]
 
   (util/check-map check-requirements-arg-specs args)
 
@@ -108,8 +107,8 @@
     obj))
 
 (defprotocol Enjin
-  "Enjin : a enjin with a particular schema, which has a bunch of queries
-   which may be run against it, a bunch of long-running batch jobs which may be run for it
+  "Enjin : a enjin with a particular schema, which has a bunch of
+   long-running batch jobs which may be run for it
    a bunch of non-terminating services to be run on it and a bunch of web-services
    which may be run on it"
 
@@ -128,11 +127,6 @@
     "the enjin-deps supplied at creation time")
   (enjin-dep [this id]
     "get a enjin-dep by id")
-
-  (queries [this]
-    "the queries defined on the Enjin")
-  (query* [this query-id] [this query-id args]
-    "run the query with id <query-id>, with (apply query this args). use query instead")
 
   (jobs [this]
     "the jobs defined on the Enjin")
@@ -167,12 +161,7 @@
   (create-webservices [this webservice-ids]
     "create webservices with ids <webservice-ids> which may be a list of ids or :all"))
 
-(defn query
-  "run the query with id <query-id>"
-  [enjin query-id & args]
-  (query* enjin query-id args))
-
-(defrecord-openly simple-enjin [model* params* connectors* enjin-deps* queries* jobs* services* webservices* running-jobs* running-services*]
+(defrecord-openly simple-enjin [model* params* connectors* enjin-deps* jobs* services* webservices* running-jobs* running-services*]
   Enjin
   (model [this] model*)
   (params [this] params*)
@@ -187,10 +176,6 @@
       (if-not (= req-type ds-type)
         (throw (RuntimeException. (<< "enjin ~{id} is of type ~{ds-type} but is required to be of type ~{req-type}"))))
       ds))
-
-  (queries [this] queries*)
-  (query* [this query-id] (query* this query-id nil))
-  (query* [this query-id args] (apply (queries* query-id) this args))
 
   (jobs [this] jobs*)
   (start-job [this job-id] (start-or-noop this running-jobs* jobs* job-id))
@@ -215,14 +200,13 @@
    :params true
    :connectors true
    :enjin-deps true
-   :queries true
    :jobs true
    :services true
    :webservices true})
 
 
 (defn- create-simple-enjin*
-  [& {:keys [model params connectors enjin-deps queries jobs services webservices] :as args}]
+  [& {:keys [model params connectors enjin-deps jobs services webservices] :as args}]
   (if-not model
     (throw (RuntimeException. "no model")))
 
@@ -232,7 +216,6 @@
                       :params params
                       :connectors connectors
                       :enjin-deps enjin-deps
-                      :queries queries
                       :jobs jobs
                       :services services
                       :webservices webservices)
@@ -241,7 +224,6 @@
                         :params* (or params {})
                         :connectors* (or connectors {})
                         :enjin-deps* (or enjin-deps {})
-                        :queries* (or queries {})
                         :jobs* (or jobs {})
                         :services* (or services {})
                         :webservices* (or webservices {})

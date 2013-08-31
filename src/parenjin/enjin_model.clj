@@ -4,7 +4,7 @@
             [parenjin.enjin :as ds]))
 
 (defprotocol EnjinModel
-  "EnjinModel is a factory for Enjins of a particular schema. a EnjinModel has
+  "EnjinModel is a factory for Enjins of a particular type. an EnjinModel has
      - model-type : a unique identifier for the EnjinModel
      - param-requirements : a map of {param-id type} which defines the ids of required parameters,
                             and their respective types
@@ -12,7 +12,6 @@
                                 and their respective types
      - enjin-requirements : a map of {enjin-id type} which defines the ids of required Enjin dependencies,
                               and their respective types
-     - queries : a map of {query-id (fn [enjin & more] ...)} which defines queries on the Enjin
      - jobs : a map of {job-id (fn [enjin] ...)} which defines long-running jobs on the Enjin
      - services :  a map of {service-id (fn [enjin] ...)} which defines non-terminating services for the Enjin
      - webservices : a map of {webservice-id (fn [enjin] ... (compojure-routes))} which functions must return
@@ -27,10 +26,6 @@
     "specify the enjin requires a connector with id <connector-id> and type <type>")
   (requires-enjin [this enjin-id model-type]
     "specify the enjin has a dependent enjin with id <enjin-id> and model-type <model-type>")
-
-  (defquery [this query-id queryfn]
-    "define a query on the enjin with id <query-id>. <queryfn> is a function of one or more parameter, the first
-     parameter being the enjin itself")
 
   (defjob [this job-id jobfn]
     "define a job on the enjin with id <job-id>. <jobfn> is a function of one parameter, the enjin")
@@ -58,7 +53,6 @@
   [[:param-reqs* :param-reqs]
    [:connector-reqs* :connector-reqs]
    [:enjin-reqs* :enjin-reqs]
-   [:queries* :queries]
    [:jobs* :jobs]
    [:services* :services]
    [:webservices* :webservices]]
@@ -71,7 +65,7 @@
        (into {:model-type (:model-type* enjin-model)})))
 
 (defrecord-openly enjin-model
-  [model-type* param-reqs* connector-reqs* enjin-reqs* queries* jobs* services* webservices*]
+  [model-type* param-reqs* connector-reqs* enjin-reqs* jobs* services* webservices*]
 
   EnjinModel
   (model-type [this]
@@ -85,9 +79,6 @@
 
   (requires-enjin [this enjin-id model-type]
     (assoc-def this enjin-reqs* enjin-id model-type))
-
-  (defquery [this query-id queryfn]
-    (assoc-def this queries* query-id queryfn))
 
   (defjob [this job-id jobfn]
     (assoc-def this jobs* job-id jobfn))
@@ -103,7 +94,6 @@
                                  :params params
                                  :connectors connectors
                                  :enjin-deps enjin-deps
-                                 :queries @queries*
                                  :jobs @jobs*
                                  :services @services*
                                  :webservices @webservices*)))
@@ -130,7 +120,6 @@
                        :param-reqs* (ref {})
                        :connector-reqs* (ref {})
                        :enjin-reqs* (ref {})
-                       :queries* (ref {})
                        :jobs* (ref {})
                        :services* (ref {})
                        :webservices* (ref {})}))
