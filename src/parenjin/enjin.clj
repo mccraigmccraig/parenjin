@@ -29,13 +29,6 @@
                        (util/check-map (req-field model) prov)))
                 true)))
 
-(defn- future-status
-  "get the status of a future, returning :running, :stopped or :none"
-  [f]
-  (cond (and f (not (realized? f))) :running
-        f :stopped
-        true :none))
-
 (defn- start-or-noop
   "if it's not running call (defs id) in a future and retain the future in <trackref>"
   [this trackref defs id]
@@ -45,7 +38,7 @@
        (ref-set trackref
                 (assoc @trackref id
                        (future ((defs id) this)))))))
-  (future-status (@trackref id)))
+  (util/future-status (@trackref id)))
 
 (defn- stop-or-noop
   "if it is running, stop the future in (@trackref id)"
@@ -53,7 +46,7 @@
   (dosync
    (if-let [f ((ensure trackref) id)]
      (future-cancel f)))
-  (future-status (@trackref id)))
+  (util/future-status (@trackref id)))
 
 (defn- choose-ids
   "choose ids, which may be a list of ids, :all or :none"
@@ -68,14 +61,6 @@
   (->> (choose-ids ids-spec all-ids)
        (map (fn [id] (f this id)))
        doall))
-
-(defn- deref-if-pending
-  "dereference an object if it's an IPending, letting circular dependencies
-   between enjins be expressed as Delays to other enjins"
-  [obj]
-  (if (instance? clojure.lang.IPending obj)
-    (deref obj)
-    obj))
 
 (defprotocol Enjin
   "Enjin : a enjin with a particular schema, which has a bunch of
@@ -132,6 +117,7 @@
   (create-webservices [this webservice-ids]
     "create webservices with ids <webservice-ids> which may be a list of ids or :all"))
 
+
 (defrecord-openly simple-enjin [model* params* connectors* enjin-deps* jobs* services* webservices* running-jobs* running-services*]
   Enjin
   (model [this] model*)
@@ -142,7 +128,7 @@
   (enjin-deps [this] enjin-deps*)
   (enjin-dep [this id]
     (let [req-type (get-in model* [:enjin-reqs id])
-          ds (deref-if-pending (enjin-deps* id))
+          ds (util/deref-if-pending (enjin-deps* id))
           ds-type (get-in ds [:model* :model-type])]
       (if-not (= req-type ds-type)
         (throw (RuntimeException. (<< "enjin ~{id} is of type ~{ds-type} but is required to be of type ~{req-type}"))))
@@ -151,14 +137,14 @@
   (jobs [this] jobs*)
   (start-job [this job-id] (start-or-noop this running-jobs* jobs* job-id))
   (start-jobs [this job-ids] (map-over-ids this start-job job-ids (keys jobs*)))
-  (job-status [this job-id] (future-status (@running-jobs* job-id)))
+  (job-status [this job-id] (util/future-status (@running-jobs* job-id)))
   (stop-job [this job-id] (stop-or-noop this running-jobs* job-id))
   (stop-jobs [this job-ids] (map-over-ids this stop-job job-ids (keys jobs*)))
 
   (services [this] services*)
   (start-service [this service-id] (start-or-noop this running-services* services* service-id))
   (start-services [this service-ids] (map-over-ids this start-service service-ids (keys services*)))
-  (service-status [this service-id] (future-status (@running-services* service-id)))
+  (service-status [this service-id] (util/future-status (@running-services* service-id)))
   (stop-service [this service-id] (stop-or-noop this running-services* service-id))
   (stop-services [this service-ids] (map-over-ids this stop-service service-ids (keys services*)))
 

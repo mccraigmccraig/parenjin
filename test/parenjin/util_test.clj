@@ -47,3 +47,21 @@
   (resolve-obj ..foo..) => ..result..
   (provided
     (resolve-ref ..foo..) => ..result..))
+
+(fact "deref-if-pending should deref an object if it is pending"
+  (deref-if-pending (delay ..val..)) => ..val..
+  (deref-if-pending ..val..) => ..val..)
+
+(fact "deref-if-deref should deref an object if it is dereffable"
+  (deref-if-deref (atom ..val..)) => ..val..
+  (deref-if-deref ..val..) => ..val..)
+
+(fact "future-status should return a status for a future"
+  (future-status nil) => :none
+
+  (let [f (future 1)]
+    (Thread/sleep 100)
+    (future-status f) => :stopped)
+
+  (let [f (future (do (Thread/sleep 100) 1))]
+    (future-status f) => :running))

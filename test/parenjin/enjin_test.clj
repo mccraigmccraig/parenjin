@@ -24,16 +24,6 @@
       (util/check-map ..param-reqs.. ..params..) => true
       (util/check-map ..connector-reqs.. ..connectors..) => true)))
 
-(fact "future-status should return a status for a future"
-  (#'ds/future-status nil) => :none
-
-  (let [f (future 1)]
-    (Thread/sleep 100)
-    (#'ds/future-status f) => :stopped)
-
-  (let [f (future (do (Thread/sleep 100) 1))]
-    (#'ds/future-status f) => :running))
-
 (with-state-changes [(around :facts (let [trackref (ref {})
                                              result (promise)]
                                          ?form ))]
@@ -87,10 +77,6 @@
   (provided
     (nofn ..this.. ..id-a..) => ..a..
     (nofn ..this.. ..id-b..) => ..b..))
-
-(fact "deref-if-pending should deref an object if it is pending"
-  (#'ds/deref-if-pending (delay ..val..)) => ..val..
-  (#'ds/deref-if-pending ..val..) => ..val..)
 
 (fact "create-simple-enjin* should create a enjin with just a model"
   (#'ds/create-simple-enjin*) => (throws RuntimeException)
@@ -156,7 +142,7 @@
   (let [ds (fsd {:running-jobs {:foo ..foo-future..}})]
     (job-status ds :foo) => ..foo-status..
     (provided
-      (#'ds/future-status ..foo-future..) => ..foo-status..)))
+      (util/future-status ..foo-future..) => ..foo-status..)))
 
 (fact "stop-job should stop a job"
   (let [ds (fsd)
@@ -188,7 +174,7 @@
   (let [ds (fsd {:running-services {:foo ..foo-future..}})]
     (service-status ds :foo) => ..foo-status..
     (provided
-      (#'ds/future-status ..foo-future..) => ..foo-status..)))
+      (util/future-status ..foo-future..) => ..foo-status..)))
 
 (fact "stop-service should stop a service"
   (let [ds (fsd)

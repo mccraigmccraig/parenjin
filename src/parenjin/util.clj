@@ -68,3 +68,25 @@
     (if (fn? spec-value)
       (spec-value)
       spec-value)))
+
+(defn deref-if-pending
+  "dereference an object if it's an IPending, letting circular dependencies
+   between enjins be expressed as Delays to other enjins"
+  [obj]
+  (if (instance? clojure.lang.IPending obj)
+    (deref obj)
+    obj))
+
+(defn deref-if-deref
+  "dereference an object if it's an IDeref, otherwise return it unchanged"
+  [obj]
+  (if (instance? clojure.lang.IDeref obj)
+    (deref obj)
+    obj))
+
+(defn future-status
+  "get the status of a future, returning :running, :stopped or :none"
+  [f]
+  (cond (and f (not (realized? f))) :running
+        f :stopped
+        true :none))
