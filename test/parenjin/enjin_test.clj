@@ -6,19 +6,6 @@
   (:import [clojure.lang ExceptionInfo]
            [java.util.concurrent CancellationException]))
 
-(fact "check-type should check the type against a requirement"
-  (#'ds/check-type :any nil) => false
-
-  (#'ds/check-type :any 1) => true
-  (#'ds/check-type :any "foo") => true
-  (#'ds/check-type nil 1) => true
-
-  (#'ds/check-type (fn [o] (integer? o)) 1) => true
-  (#'ds/check-type (fn [o] (integer? o)) "1") => (throws ExceptionInfo)
-  (#'ds/check-type integer? 1) => true
-
-  (#'ds/check-type String "foo") => true)
-
 (fact "check-req should check a requirements hash against a provision hash"
   ;; unknown keys
   (#'ds/check-req {} {:foo 1}) => (throws ExceptionInfo)

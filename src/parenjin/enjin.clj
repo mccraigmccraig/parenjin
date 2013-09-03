@@ -6,19 +6,6 @@
             [compojure.core :as compojure]
             [parenjin.util :as util]))
 
-(defn- check-type
-  "check a value against a required type... the required type may be :
-   - nil or :any : matches anything
-   - a function : called with the value, truth responses means match
-   - a class : returns true if the value is an instance of the class"
-  [req-type val]
-  (cond (nil? val) false
-        (= req-type :any) true
-        (= req-type nil) true
-        (and (fn? req-type) (req-type val)) true
-        (and (class? req-type) (instance? req-type val)) true
-        true (throw (ex-info (<< "not required type: ~{val}") {:val val}))))
-
 (defn- check-req
   "check a hash of provisions against a hash of requirements... there must be a 1-1 correspondence
    between keys in the hashes, and each requirement must have a matching provision"
@@ -32,7 +19,7 @@
 
     (->> req-keys
          (reduce (fn [result key] (and result
-                                     (check-type (req key) (prov key))))
+                                      (util/check-val key (req key) (prov key))))
                  true))))
 
 (def ^:private check-requirements-arg-specs
