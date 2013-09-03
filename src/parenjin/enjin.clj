@@ -6,22 +6,6 @@
             [compojure.core :as compojure]
             [parenjin.util :as util]))
 
-(defn- check-req
-  "check a hash of provisions against a hash of requirements... there must be a 1-1 correspondence
-   between keys in the hashes, and each requirement must have a matching provision"
-  [req prov]
-  (let [req-keys (set (keys req))
-        prov-keys (set (keys prov))
-        missing-keys (vec (set/difference req-keys prov-keys))
-        unknown-keys (vec (set/difference prov-keys req-keys))]
-    (if (or (not-empty missing-keys) (not-empty unknown-keys))
-      (throw (ex-info (<< "missing keys: ~{missing-keys}, unknown keys: ~{unknown-keys}") {:missing-keys missing-keys :unknown unknown-keys})))
-
-    (->> req-keys
-         (reduce (fn [result key] (and result
-                                      (util/check-val key (req key) (prov key))))
-                 true))))
-
 (def ^:private check-requirements-arg-specs
   {:model Object
    :params true
@@ -42,7 +26,7 @@
          [:connector-reqs connectors]]
         (reduce (fn [result [req-field prov]]
                   (and result
-                       (check-req (req-field model) prov)))
+                       (util/check-map (req-field model) prov)))
                 true)))
 
 (defn- future-status

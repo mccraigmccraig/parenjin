@@ -2,33 +2,27 @@
   (:use midje.sweet
         parenjin.enjin)
   (:require [parenjin.enjin :as ds]
+            [parenjin.util :as util]
             [compojure.core :as compojure])
   (:import [clojure.lang ExceptionInfo]
            [java.util.concurrent CancellationException]))
 
-(fact "check-req should check a requirements hash against a provision hash"
-  ;; unknown keys
-  (#'ds/check-req {} {:foo 1}) => (throws ExceptionInfo)
-
-  ;; Missing keys
-  (#'ds/check-req {:foo :any} {}) => (throws ExceptionInfo)
-
-  ;; multiple keys
-  (#'ds/check-req {:foo Long :bar String} {:foo 1 :bar "bar"}) => true)
-
 (fact "check-requirements should check all requirements against provisions"
-  (#'ds/check-requirements :model {:param-reqs ..param-reqs..
-                                   :connector-reqs ..connector-reqs..}
-                           :params ..params..
-                           :connectors ..connectors..
-                           :enjin-deps ..enjin-deps..
-                           :jobs ..jobs..
-                           :services ..services..
-                           :webservices ..webservices..) => true
+  (let [args {:model {:param-reqs ..param-reqs..
+                      :connector-reqs ..connector-reqs..}
+              :params ..params..
+              :connectors ..connectors..
+              :enjin-deps ..enjin-deps..
+              :jobs ..jobs..
+              :services ..services..
+              :webservices ..webservices..}]
 
-                           (provided
-                             (#'ds/check-req ..param-reqs.. ..params..) => true
-                             (#'ds/check-req ..connector-reqs.. ..connectors..) => true))
+    (apply #'ds/check-requirements (apply concat args)) => true
+
+    (provided
+      (util/check-map @#'ds/check-requirements-arg-specs args) => true
+      (util/check-map ..param-reqs.. ..params..) => true
+      (util/check-map ..connector-reqs.. ..connectors..) => true)))
 
 (fact "future-status should return a status for a future"
   (#'ds/future-status nil) => :none
