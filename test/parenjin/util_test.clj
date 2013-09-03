@@ -32,3 +32,18 @@
 
   (check-map {:foo Number :bar [String nil]} {:foo 10 :bar "bar" :baz 100}) => (throws RuntimeException)
   (check-map {:foo Number :bar [String nil]} {:bar "bar"}) => (throws RuntimeException))
+
+(fact "resolve-ref should resolve a symbol, keyword, var or literal"
+  (resolve-ref 'clojure.core/identity) => identity
+  (resolve-ref :clojure.core/identity) => identity
+  (resolve-ref #'clojure.core/identity) => identity
+  (resolve-ref ..foo..) => ..foo..)
+
+(fact "resolve-obj should call a function if the resolved ref is a function, otherwise just resolve the ref"
+  (resolve-obj ..foo..) => ..result..
+  (provided
+    (resolve-ref ..foo..) => (fn [] ..result..))
+
+  (resolve-obj ..foo..) => ..result..
+  (provided
+    (resolve-ref ..foo..) => ..result..))

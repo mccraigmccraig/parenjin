@@ -7,21 +7,6 @@
             [compojure.core :as compojure]
             [clomponents.control :as clomp]))
 
-(fact "resolve-ref should resolve a symbol, keyword, var or literal"
-  (#'app/resolve-ref 'clojure.core/identity) => identity
-  (#'app/resolve-ref :clojure.core/identity) => identity
-  (#'app/resolve-ref #'clojure.core/identity) => identity
-  (#'app/resolve-ref ..foo..) => ..foo..)
-
-(fact "resolve-obj should call a function if the resolved ref is a function, otherwise just resolve the ref"
-  (#'app/resolve-obj ..foo..) => ..result..
-  (provided
-    (#'app/resolve-ref ..foo..) => (fn [] ..result..))
-
-  (#'app/resolve-obj ..foo..) => ..result..
-  (provided
-    (#'app/resolve-ref ..foo..) => ..result..))
-
 (with-state-changes [(around :facts (let [spec {:model ..model..
                                                 :params {:aparam 10 :anotherparam "boo"}
                                                 :connectors {:myx :x

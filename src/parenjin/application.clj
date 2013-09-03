@@ -2,25 +2,9 @@
   (:use midje.open-protocols)
   (:require [clomponents.control :as clomp]
             [compojure.core :as compojure]
+            [parenjin.util :as util]
             [parenjin.enjin :as ds]
             [parenjin.enjin-model :as dsm]))
-
-(defn- resolve-ref
-  [n]
-  (cond (symbol? n) (do (require (symbol (namespace n)))
-                        (deref (resolve n)))
-        (keyword? n) (do (require (symbol (namespace n)))
-                         (deref (ns-resolve (symbol (namespace n))
-                                            (symbol (name n)))))
-        (var? n) (deref n)
-        true n))
-
-(defn- resolve-obj
-  [spec]
-  (let [spec-value (resolve-ref spec)]
-    (if (fn? spec-value)
-      (spec-value)
-      spec-value)))
 
 (defprotocol Application
 
@@ -87,7 +71,7 @@
   "create a enjin from an application's specification"
   [connector-registry enjin-delay-registry-promise enjin-spec]
 
-  (let [model (-> enjin-spec :model resolve-obj)
+  (let [model (-> enjin-spec :model util/resolve-obj)
         connectors (->> enjin-spec :connectors (map (fn [[conn-id reg-id]] [conn-id (connector-registry reg-id)])) (into {}))
         dependencies (->> enjin-spec :enjin-deps (map (fn [[dep-id ds-id]] [dep-id (@enjin-delay-registry-promise ds-id)])) (into {}))]
     (dsm/create-enjin model
@@ -117,7 +101,7 @@
 (defn- create-application*
   "create an application given an application specification"
   [app-spec]
-  (let [connector-registry (resolve-obj (:connectors app-spec))
+  (let [connector-registry (util/resolve-obj (:connectors app-spec))
         enjins (create-enjins connector-registry app-spec)
         web-connector (connector-registry (get-in app-spec [:web :connector]))]
     (map->application {:app-spec* app-spec

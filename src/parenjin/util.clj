@@ -43,3 +43,20 @@
     (reduce (fn [r k] (and r (check-val k (keyspecs k) (m k))))
             true
             ks)))
+
+(defn resolve-ref
+  [n]
+  (cond (symbol? n) (do (require (symbol (namespace n)))
+                        (deref (resolve n)))
+        (keyword? n) (do (require (symbol (namespace n)))
+                         (deref (ns-resolve (symbol (namespace n))
+                                            (symbol (name n)))))
+        (var? n) (deref n)
+        true n))
+
+(defn resolve-obj
+  [spec]
+  (let [spec-value (resolve-ref spec)]
+    (if (fn? spec-value)
+      (spec-value)
+      spec-value)))
