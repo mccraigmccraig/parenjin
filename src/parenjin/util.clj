@@ -45,6 +45,12 @@
             ks)))
 
 (defn resolve-ref
+  "resolve a reference which may be
+   - a symbol : the namespace part is required and the symbol resolved
+                and dereferences
+   - a keyword : converted to a symbol and resolved
+   - a var : the var is dereferenced
+   - something else : returned unchanged"
   [n]
   (cond (symbol? n) (do (require (symbol (namespace n)))
                         (deref (resolve n)))
@@ -55,6 +61,8 @@
         true n))
 
 (defn resolve-obj
+  "resolve an object from it's spec which may be either a reference which is resolved with resolve-ref,
+   or a function which is called to return the object"
   [spec]
   (let [spec-value (resolve-ref spec)]
     (if (fn? spec-value)
