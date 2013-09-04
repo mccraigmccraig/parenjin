@@ -1,8 +1,7 @@
 (ns parenjin.enjin-model-test
   (:use midje.sweet
         parenjin.enjin-model)
-  (:require [parenjin.enjin :as enj]
-            [parenjin.enjin-model :as enjm]))
+  (:require [parenjin.enjin-model :as enjm]))
 
 (fact "create-enjin-model should create a EnjinModel"
   (let [m (create-enjin-model :foo)]
@@ -56,7 +55,7 @@
                                                  (defservice :b-service ..b-service..)
                                                  (defwebservice :a-webservice ..a-webservice..)
                                                  (defwebservice :b-webservice ..b-webservice..))
-                                          pm (#'enjm/persist-model m)]
+                                          pm (persist-model m)]
                                        ?form))]
   (fact "persist-model should create a map of the model content"
     (:param-reqs pm) => {:a-param ..a-param-type.. :b-param ..b-param-type..}
@@ -65,38 +64,3 @@
     (:jobs pm) => {:a-job ..a-job.. :b-job ..b-job..}
     (:services pm) => {:a-service ..a-service.. :b-service ..b-service..}
     (:webservices pm) => {:a-webservice ..a-webservice.. :b-webservice ..b-webservice..}))
-
-(fact "create-enjin should create a enjin from the supplied requirement-resolutions"
-  (let [m (create-enjin-model :foo)]
-    (requires-param m :param-a ..param-a-type..)
-    (requires-param m :param-b ..param-b-type..)
-
-    (requires-connector m :conn-a ..conn-a-type..)
-    (requires-connector m :conn-b ..conn-b-type..)
-
-    (requires-enjin m :ds-a ..model-a-type..)
-    (requires-enjin m :ds-b ..model-b-type..)
-
-    (defjob m :j-a ..job-a..)
-    (defjob m :j-b ..job-b..)
-
-    (defservice m :serv-a ..serv-a..)
-    (defservice m :serv-b ..serv-b..)
-
-    (defwebservice m :ws-a ..ws-a..)
-    (defwebservice m :ws-b ..ws-b..)
-
-    (create-enjin m
-                    :params {:param-a ..param-a.. :param-b ..param-b..}
-                    :connectors {:conn-a ..conn-a.. :conn-b ..conn-b..}
-                    :enjin-deps {:ds-a ..ds-a.. :ds-b ..ds-b..})
-    => ..ds..
-
-    (provided
-      (#'enj/create-simple-enjin* :model (#'enjm/persist-model m)
-                                   :params {:param-a ..param-a.. :param-b ..param-b..}
-                                   :connectors {:conn-a ..conn-a.. :conn-b ..conn-b..}
-                                   :enjin-deps {:ds-a ..ds-a.. :ds-b ..ds-b..}
-                                   :jobs {:j-a ..job-a.. :j-b ..job-b..}
-                                   :services {:serv-a ..serv-a.. :serv-b ..serv-b..}
-                                   :webservices {:ws-a ..ws-a.. :ws-b ..ws-b..}) => ..ds..)))

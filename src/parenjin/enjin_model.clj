@@ -1,7 +1,6 @@
 (ns parenjin.enjin-model
   (:use midje.open-protocols)
-  (:require [parenjin.util :as util]
-            [parenjin.enjin :as enj]))
+  (:require [parenjin.util :as util]))
 
 (defprotocol EnjinModel
   "EnjinModel is a factory for Enjins of a particular type. an EnjinModel has
@@ -37,6 +36,9 @@
     "define a webservice on the enjin with id <webservice-id>. <websvcfn> is a function of one parameter, the enjin,
      which returns a list of compojure routes")
 
+  (persist-model [this]
+    "create a persistent version of the EnjinModel")
+
   (create-enjin* [this params connectors enjins]
     "create a Enjin from this EnjinModel, supplying <params>, <connectors> and <enjins> to match the requirements
      defined in this EnjinModel"))
@@ -55,14 +57,7 @@
    [:enjin-reqs* :enjin-reqs]
    [:jobs* :jobs]
    [:services* :services]
-   [:webservices* :webservices]]
-)
-(defn- persist-model
-  "produce a version of the enjin model without the refs"
-  [enjin-model]
-  (->> persist-model-fields
-       (map (fn [[fromf tof]] [tof @(fromf enjin-model)]))
-       (into {:model-type (:model-type* enjin-model)})))
+   [:webservices* :webservices]])
 
 (defrecord-openly enjin-model
   [model-type* param-reqs* connector-reqs* enjin-reqs* jobs* services* webservices*]
@@ -89,29 +84,10 @@
   (defwebservice [this webservice-id websvcfn]
     (assoc-def this webservices* webservice-id websvcfn))
 
-  (create-enjin* [this params connectors enjin-deps]
-    (#'enj/create-simple-enjin* :model (persist-model this)
-                                 :params params
-                                 :connectors connectors
-                                 :enjin-deps enjin-deps
-                                 :jobs @jobs*
-                                 :services @services*
-                                 :webservices @webservices*)))
-
-(def ^:private create-enjin-arg-specs
-  {:params [nil map?]
-   :connectors [nil map?]
-   :enjin-deps [nil map?]})
-
-(defn create-enjin
-  "create a Enjin from <enjin-model>,
-   supplying <params>, <connectors> and <enjin-deps> to match the requirements
-   defined in <enjin-model>"
-  [enjin-model & {:keys [params connectors enjin-deps] :as args}]
-
-  (util/check-map create-enjin-arg-specs args)
-
-  (create-enjin* enjin-model params connectors enjin-deps))
+  (persist-model [this]
+    (->> persist-model-fields
+         (map (fn [[fromf tof]] [tof @(fromf this)]))
+         (into {:model-type (:model-type* this)}))))
 
 (defn create-enjin-model
   "create a EnjinModel supplying a <model-type> which should uniquely identify the model"

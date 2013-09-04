@@ -23,10 +23,10 @@
                           (delay {:bars bardsdelay  :bazs bazdsdelay})
                           spec) => ..enjin..
                           (provided
-                            (enjm/create-enjin ..model..
-                                                :params params
-                                                :connectors {:myx ..xconn.. :myy ..yconn..}
-                                                :enjin-deps {:mybars bardsdelay :mybazs bazdsdelay}) => ..enjin..)))
+                            (enj/create-enjin ..model..
+                                              :params params
+                                              :connectors {:myx ..xconn.. :myy ..yconn..}
+                                              :enjin-deps {:mybars bardsdelay :mybazs bazdsdelay}) => ..enjin..)))
 
 (with-state-changes [(around :facts (let [spec {:enjins {:foos {:model ..foos-model..}
                                                            :bars {:model ..bars-model..}}}]
@@ -36,14 +36,14 @@
     (-> (#'app/create-enjins ..connectors.. spec) :foos) => ..foos-enjin..
 
     (provided
-      (enjm/create-enjin ..foos-model.. :params nil :connectors {} :enjin-deps {}) => ..foos-enjin..
-      (enjm/create-enjin ..bars-model.. :params nil :connectors {} :enjin-deps {}) => ..bars-enjin..)
+      (enj/create-enjin ..foos-model.. :params nil :connectors {} :enjin-deps {}) => ..foos-enjin..
+      (enj/create-enjin ..bars-model.. :params nil :connectors {} :enjin-deps {}) => ..bars-enjin..)
 
     (-> (#'app/create-enjins ..connectors.. spec) :bars) => ..bars-enjin..
 
     (provided
-      (enjm/create-enjin ..foos-model.. :params nil :connectors {} :enjin-deps {}) => ..foos-enjin..
-      (enjm/create-enjin ..bars-model.. :params nil :connectors {} :enjin-deps {}) => ..bars-enjin..)))
+      (enj/create-enjin ..foos-model.. :params nil :connectors {} :enjin-deps {}) => ..foos-enjin..
+      (enj/create-enjin ..bars-model.. :params nil :connectors {} :enjin-deps {}) => ..bars-enjin..)))
 
 
 (def m (-> (enjm/create-enjin-model :foos)

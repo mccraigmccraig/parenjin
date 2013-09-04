@@ -74,10 +74,10 @@
   (let [model (-> enjin-spec :model util/resolve-obj)
         connectors (->> enjin-spec :connectors (map (fn [[conn-id reg-id]] [conn-id (connector-registry reg-id)])) (into {}))
         dependencies (->> enjin-spec :enjin-deps (map (fn [[dep-id ds-id]] [dep-id (@enjin-delay-registry-promise ds-id)])) (into {}))]
-    (dsm/create-enjin model
-                        :params (:params enjin-spec)
-                        :connectors connectors
-                        :enjin-deps dependencies)))
+    (enj/create-enjin model
+                      :params (:params enjin-spec)
+                      :connectors connectors
+                      :enjin-deps dependencies)))
 
 (defn- create-enjins
   [connector-registry app-spec]

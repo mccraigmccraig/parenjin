@@ -2,6 +2,7 @@
   (:use midje.sweet
         parenjin.enjin)
   (:require [parenjin.enjin :as enj]
+            [parenjin.enjin-model :as enjm]
             [parenjin.util :as util]
             [compojure.core :as compojure])
   (:import [clojure.lang ExceptionInfo]
@@ -21,8 +22,8 @@
 
     (provided
       (util/check-map @#'enj/check-requirements-arg-specs args) => true
-      (util/check-map ..param-reqs.. ..params..) => true
-      (util/check-map ..connector-reqs.. ..connectors..) => true)))
+      (util/check-map ..param-reqs.. ..params.. :skip-ideref? true) => true
+      (util/check-map ..connector-reqs.. ..connectors.. :skip-ideref? false) => true)))
 
 (with-state-changes [(around :facts (let [trackref (ref {})
                                              result (promise)]
@@ -80,17 +81,20 @@
 
 (fact "create-simple-enjin* should create a enjin with just a model"
   (#'enj/create-simple-enjin*) => (throws RuntimeException)
-  (model  (#'enj/create-simple-enjin* :model ..model..)) => ..model..)
+  (model (#'enj/create-simple-enjin* :model {:model-type ..type..})) => {:model-type ..type..})
+
+;; otherwise compiler borks, 'cos metaconstants are only auto-declared inside midje macros
+(declare ..model.. ..params.. ..connectors.. ..enjin-deps.. ..jobs.. ..services.. ..webservices..)
 
 (defn csd
   [& [overrides]]
   (#'enj/create-simple-enjin* :model (or (:model overrides) ..model..)
-                               :params (or (:params overrides) ..params..)
-                               :connectors (or (:connectors overrides) ..connectors..)
-                               :enjin-deps (or (:enjin-deps overrides) ..enjin-deps..)
-                               :jobs (or (:jobs overrides) ..jobs..)
-                               :services (or (:services overrides) ..services..)
-                               :webservices (or (:webservices overrides) ..webservices..)))
+                              :params (or (:params overrides) ..params..)
+                              :connectors (or (:connectors overrides) ..connectors..)
+                              :enjin-deps (or (:enjin-deps overrides) ..enjin-deps..)
+                              :jobs (or (:jobs overrides) ..jobs..)
+                              :services (or (:services overrides) ..services..)
+                              :webservices (or (:webservices overrides) ..webservices..)))
 
 (fact
   (model (csd)) => ..model..
@@ -108,6 +112,16 @@
                              :jobs ..jobs..
                              :services ..services..
                              :webservices ..webservices..) => true))
+
+(fact "enjin with an IDeref parameter should check parameter type when param method retrieves param"
+  (let [bar-param (atom nil)
+        e (#'enj/create-simple-enjin* :model {:param-reqs {:bar String}}
+                                        :params {:bar bar-param})]
+
+    (param e :bar) => (throws RuntimeException)
+
+    (swap! bar-param (fn [v] "boo!"))
+    (param e :bar) => "boo!"))
 
 (defn fsd
   [& [overrides]]
@@ -197,3 +211,26 @@
   (let [ds (fsd {:webservices {:foo (fn [enjin] enjin =not=> nil ..foo-webservice..)
                                :bar (fn [enjin] enjin =not=> nil ..bar-webservice..)}})]
     (create-webservices ds [:foo :bar]) => [..foo-webservice.. ..bar-webservice..]))
+
+(fact "create-enjin should create a enjin from the supplied requirement-resolutions"
+  (let [m (enjm/create-enjin-model :foo)
+
+        pmodel {:jobs {:j-a ..job-a.. :j-b ..job-b..}
+                :services {:serv-a ..serv-a.. :serv-b ..serv-b..}
+                :webservices {:ws-a ..ws-a.. :ws-b ..ws-b..}}]
+
+    (create-enjin m
+                  :params {:param-a ..param-a.. :param-b ..param-b..}
+                  :connectors {:conn-a ..conn-a.. :conn-b ..conn-b..}
+                  :enjin-deps {:ds-a ..ds-a.. :ds-b ..ds-b..})
+    => ..ds..
+
+    (provided
+      (enjm/persist-model m) => pmodel
+      (#'enj/create-simple-enjin* :model pmodel
+                                  :params {:param-a ..param-a.. :param-b ..param-b..}
+                                  :connectors {:conn-a ..conn-a.. :conn-b ..conn-b..}
+                                  :enjin-deps {:ds-a ..ds-a.. :ds-b ..ds-b..}
+                                  :jobs {:j-a ..job-a.. :j-b ..job-b..}
+                                  :services {:serv-a ..serv-a.. :serv-b ..serv-b..}
+                                  :webservices {:ws-a ..ws-a.. :ws-b ..ws-b..}) => ..ds..)))

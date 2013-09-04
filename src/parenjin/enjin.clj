@@ -4,10 +4,12 @@
         clojure.core.incubator)
   (:require [clojure.set :as set]
             [compojure.core :as compojure]
-            [parenjin.util :as util]))
+            [parenjin.util :as util]
+            [parenjin.enjin-model :as enjm])
+  (:import [parenjin.enjin_model EnjinModel]))
 
 (def ^:private check-requirements-arg-specs
-  {:model Object
+  {:model true
    :params true
    :connectors true
    :enjin-deps true
@@ -22,11 +24,11 @@
   (util/check-map check-requirements-arg-specs args)
 
   ;; check all the requirements are met
-  (->>  [[:param-reqs params]
-         [:connector-reqs connectors]]
-        (reduce (fn [result [req-field prov]]
+  (->>  [[:param-reqs params true]
+         [:connector-reqs connectors false]]
+        (reduce (fn [result [req-field prov skip-ideref?]]
                   (and result
-                       (util/check-map (req-field model) prov)))
+                       (util/check-map (req-field model) prov :skip-ideref? skip-ideref?)))
                 true)))
 
 (defn- start-or-noop
@@ -163,22 +165,10 @@
   (create-webservice [this webservice-id] ((webservices* webservice-id) this))
   (create-webservices [this webservice-ids] (map-over-ids this create-webservice webservice-ids (keys webservices*))))
 
-(def ^:private create-simple-enjin*-arg-specs
-  {:model Object
-   :params true
-   :connectors true
-   :enjin-deps true
-   :jobs true
-   :services true
-   :webservices true})
-
-
 (defn- create-simple-enjin*
-  [& {:keys [model params connectors enjin-deps jobs services webservices] :as args}]
+  [& {:keys [model params connectors enjin-deps jobs services webservices]}]
   (if-not model
-    (throw (RuntimeException. "no model")))
-
-  (util/check-map create-simple-enjin*-arg-specs args)
+    (throw (RuntimeException. "model required")))
 
   (check-requirements :model model
                       :params params
@@ -198,6 +188,29 @@
                       :webservices* (or webservices {})
                       :running-jobs* (ref {})
                       :running-services* (ref {})}))
+
+(def ^:private create-enjin-arg-specs
+  {:params true
+   :connectors true
+   :enjin-deps true})
+
+(defn create-enjin
+  [model & {:keys [params connectors enjin-deps] :as args}]
+
+  (util/check-map create-enjin-arg-specs args)
+
+  (let [pmodel (enjm/persist-model model)
+        jobs (:jobs pmodel)
+        services (:services pmodel)
+        webservices (:webservices pmodel)]
+
+    (create-simple-enjin* :model pmodel
+                          :params params
+                          :connectors connectors
+                          :enjin-deps enjin-deps
+                          :jobs jobs
+                          :services services
+                          :webservices webservices)))
 
 ;; limit the depth to which a enjin will print, avoiding
 ;; blowing the stack when circular references are used
