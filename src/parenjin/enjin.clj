@@ -63,13 +63,16 @@
        doall))
 
 (defprotocol Enjin
-  "Enjin : a enjin with a particular schema, which has a bunch of
+  "Enjin : an enjin with a particular schema, which has a bunch of
    long-running batch jobs which may be run for it
    a bunch of non-terminating services to be run on it and a bunch of web-services
    which may be run on it"
 
   (model [this]
     "the EnjinModel from which this Enjin was created")
+
+  (application [this]
+    "the application this Enjin belongs to")
 
   (params [this]
     "the params supplied at creation time")
@@ -118,11 +121,19 @@
     "create webservices with ids <webservice-ids> which may be a list of ids or :all"))
 
 
-(defrecord-openly simple-enjin [model* params* connectors* enjin-deps* jobs* services* webservices* running-jobs* running-services*]
+(defrecord-openly simple-enjin [model* application-promise* params* connectors* enjin-deps* jobs* services* webservices* running-jobs* running-services*]
   Enjin
   (model [this] model*)
+
+  (application [this] (if (and application-promise* (realized? application-promise*))
+                        @application-promise*))
+
   (params [this] params*)
-  (param [this name] (params* name))
+  (param [this name] (let [p (params* name)]
+                       (if (util/derefable? p)
+                         (if (util/check-val name (get-in model* [:param-reqs name]) @p)
+                           @p)
+                         p)))
   (connectors [this] connectors*)
   (connector [this id] (connectors* id))
   (enjin-deps [this] enjin-deps*)
@@ -178,14 +189,15 @@
                       :webservices webservices)
 
   (map->simple-enjin {:model* model
-                        :params* (or params {})
-                        :connectors* (or connectors {})
-                        :enjin-deps* (or enjin-deps {})
-                        :jobs* (or jobs {})
-                        :services* (or services {})
-                        :webservices* (or webservices {})
-                        :running-jobs* (ref {})
-                        :running-services* (ref {})}))
+                      :application-promise* (promise)
+                      :params* (or params {})
+                      :connectors* (or connectors {})
+                      :enjin-deps* (or enjin-deps {})
+                      :jobs* (or jobs {})
+                      :services* (or services {})
+                      :webservices* (or webservices {})
+                      :running-jobs* (ref {})
+                      :running-services* (ref {})}))
 
 ;; limit the depth to which a enjin will print, avoiding
 ;; blowing the stack when circular references are used
@@ -209,3 +221,13 @@
 (defmethod print-dup simple-enjin
   [enjin writer]
   (print-enjin enjin writer))
+
+(def ^:private ^:dynamic *current-enjin* nil)
+
+(defn with-enjin*
+  ([enjin f] (with-enjin* enjin {} f))
+  ([enjin params f]
+     (with-bindings {#'*current-enjin* enjin} f)))
+
+(defmacro with-enjin
+  [enjin params & forms] `(with-enjin* ~enjin ~params (fn [] ~@forms)))

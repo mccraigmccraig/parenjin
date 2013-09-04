@@ -1,7 +1,7 @@
 (ns parenjin.enjin-model
   (:use midje.open-protocols)
   (:require [parenjin.util :as util]
-            [parenjin.enjin :as ds]))
+            [parenjin.enjin :as enj]))
 
 (defprotocol EnjinModel
   "EnjinModel is a factory for Enjins of a particular type. an EnjinModel has
@@ -90,7 +90,7 @@
     (assoc-def this webservices* webservice-id websvcfn))
 
   (create-enjin* [this params connectors enjin-deps]
-    (#'ds/create-simple-enjin* :model (persist-model this)
+    (#'enj/create-simple-enjin* :model (persist-model this)
                                  :params params
                                  :connectors connectors
                                  :enjin-deps enjin-deps

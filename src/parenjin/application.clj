@@ -3,7 +3,7 @@
   (:require [clomponents.control :as clomp]
             [compojure.core :as compojure]
             [parenjin.util :as util]
-            [parenjin.enjin :as ds]
+            [parenjin.enjin :as enj]
             [parenjin.enjin-model :as dsm]))
 
 (defprotocol Application
@@ -34,7 +34,7 @@
   (let [enjin-specs (app-spec :enjins)]
     (->> enjin-specs
          (map (fn [[ds-id ds-spec]]
-                (ds/create-webservices (enjins ds-id)
+                (enj/create-webservices (enjins ds-id)
                                        (or (:webservices ds-spec) :all))))
          (apply concat))))
 
@@ -52,7 +52,7 @@
   (start* [this proxy]
     (->> enjins*
          (map (fn [[id enjin]]
-                (ds/start-services enjin (get-in app-spec* [:enjins id :services]))))
+                (enj/start-services enjin (get-in app-spec* [:enjins id :services]))))
          dorun)
     (clomp/destroy (web-connector this))
     (clomp/create (web-connector this) (merge (app-spec* :web) {:app (or proxy this)}))
@@ -61,8 +61,8 @@
   (stop [this]
     (->> enjins*
          (map (fn [[id enjin]]
-                (ds/stop-services enjin :all)
-                (ds/stop-jobs enjin :all)))
+                (enj/stop-services enjin :all)
+                (enj/stop-jobs enjin :all)))
          dorun)
     (clomp/destroy (web-connector this))
     true))

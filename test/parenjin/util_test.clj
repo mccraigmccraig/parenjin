@@ -19,11 +19,18 @@
 
   (test-val [nil String] nil) => true
   (test-val [nil String] "foo") => true
-  (test-val [nil String] 1) => false)
+  (test-val [nil String] 1) => false
+
+
+  (test-val String (atom nil)) => false
+  (test-val String (atom nil) :skip-ideref? true) => true)
 
 (fact "check-val should test a value and throw an exception if it fails"
   (check-val :foo Number 1) => true
-  (check-val :foo Number "foo") => (throws RuntimeException))
+  (check-val :foo Number "foo") => (throws RuntimeException)
+
+  (check-val :foo String (atom nil)) => (throws RuntimeException)
+  (check-val :foo String (atom nil) :skip-ideref? true) => true)
 
 (fact "check-map should check a map against a map of specs"
   (check-map {:foo Number :bar [String nil]} {:foo 10 :bar nil}) => true
@@ -31,7 +38,11 @@
   (check-map {:foo Number :bar [String nil]} {:foo 10 :bar 10}) => (throws RuntimeException)
 
   (check-map {:foo Number :bar [String nil]} {:foo 10 :bar "bar" :baz 100}) => (throws RuntimeException)
-  (check-map {:foo Number :bar [String nil]} {:bar "bar"}) => (throws RuntimeException))
+  (check-map {:foo Number :bar [String nil]} {:bar "bar"}) => (throws RuntimeException)
+
+  (check-map {:bar String} {:bar (atom nil)}) => (throws RuntimeException)
+  (check-map {:bar String} {:bar (atom nil)} :skip-ideref? true) => true
+  )
 
 (fact "resolve-ref should resolve a symbol, keyword, var or literal"
   (resolve-ref 'clojure.core/identity) => identity
@@ -51,6 +62,10 @@
 (fact "deref-if-pending should deref an object if it is pending"
   (deref-if-pending (delay ..val..)) => ..val..
   (deref-if-pending ..val..) => ..val..)
+
+(fact "derefable? should test whether an object is derefable"
+  (derefable? (atom ..vall..)) => true
+  (derefable? 100) => false)
 
 (fact "deref-if-deref should deref an object if it is dereffable"
   (deref-if-deref (atom ..val..)) => ..val..
