@@ -30,7 +30,7 @@
   [key spec val & {:keys [skip-ideref?]}]
   (if (test-val spec val :skip-ideref? skip-ideref?)
     true
-    (throw (RuntimeException. (<< "value ~{val} for key: ~{key} fails check")))))
+    (throw (RuntimeException. (<< "value <~{val}> for key: ~{key} fails check")))))
 
 
 (defn check-map

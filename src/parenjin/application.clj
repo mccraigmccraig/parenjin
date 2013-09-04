@@ -1,11 +1,15 @@
 (ns parenjin.application
-  (:use midje.open-protocols)
+  (:use midje.open-protocols
+        potemkin)
   (:require [clomponents.control :as clomp]
             [compojure.core :as compojure]
             [parenjin.util :as util]
             [parenjin.enjin :as enj]
             [parenjin.enjin-model :as dsm]
-            [parenjin.application-param :as aparam]))
+            [parenjin.application-proxy :as aproxy]
+            [parenjin.application-param :as aparam])
+  (:import [parenjin.application_param ApplicationParamRef ApplicationParamResolver]
+           [parenjin.application_proxy ApplicationProxy]))
 
 (defprotocol Application
 
@@ -68,6 +72,16 @@
     (clomp/destroy (web-connector this))
     true))
 
+(defn- fixup-params
+  "replace any params which are ApplicationParamRefs with resolvers for the param"
+  [params]
+  (->> params
+       (map (fn [[k v]]
+              (if (instance? ApplicationParamRef v)
+                [k (aparam/param-resolver v)]
+                [k v])))
+       (into {})))
+
 (defn- create-enjin
   "create a enjin from an application's specification"
   [connector-registry enjin-delay-registry-promise enjin-spec]
@@ -76,7 +90,7 @@
         connectors (->> enjin-spec :connectors (map (fn [[conn-id reg-id]] [conn-id (connector-registry reg-id)])) (into {}))
         dependencies (->> enjin-spec :enjin-deps (map (fn [[dep-id ds-id]] [dep-id (@enjin-delay-registry-promise ds-id)])) (into {}))]
     (enj/create-enjin model
-                      :params (:params enjin-spec)
+                      :params (fixup-params (:params enjin-spec))
                       :connectors connectors
                       :enjin-deps dependencies)))
 
@@ -99,25 +113,33 @@
                 [key (deref enjin-delay)]))
          (into {}))))
 
+(defn- deliver-app-to-param-resolvers
+  [app params]
+  (->> params
+       (map (fn [[k v]]
+              (if (instance? ApplicationParamResolver v)
+                (aparam/set-application v app))))
+       dorun))
+
 (defn- create-application*
   "create an application given an application specification"
   [app-spec]
   (let [connector-registry (util/resolve-obj (:connectors app-spec))
         enjins (create-enjins connector-registry app-spec)
-        web-connector (connector-registry (get-in app-spec [:web :connector]))
+        web-connector (get connector-registry (get-in app-spec [:web :connector]))
         application (map->application {:app-spec* app-spec
                                        :web-connector* web-connector
                                        :enjins* enjins})]
-    ;; deliver the application to all it's enjins
+    ;; deliver the application to all it's enjins, and to any ApplicationParamResolvers
     (->> enjins
-         (map (fn [[id enjin]] (deliver (:application-promise* enjin) application)))
+         (map (fn [[id enjin]]
+                (deliver (:application-promise* enjin) application)
+                (deliver-app-to-param-resolvers application (:params* enjin))))
          dorun)
+
     application))
 
-(defprotocol ApplicationProxy
-  (create [this])
-  (start [this])
-  (destroy [this]))
+(import-vars [parenjin.application-proxy create start destroy])
 
 (defrecord-openly application-proxy [app-spec* app*]
   Application
@@ -144,5 +166,4 @@
    repeatedly from the specification"
   [app-spec]
   (map->application-proxy {:app-spec* app-spec
-                           :app* (atom nil)})
-  )
+                           :app* (atom nil)}))
