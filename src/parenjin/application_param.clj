@@ -29,12 +29,12 @@
   (get-in *application-params* [app ref]))
 
 (defprotocol ApplicationParamResolver
-  (set-application [this application]))
+  (set-application [this application]
+    "allow an application to be given to the param resolver after it's creation"))
 
 (defn param-resolver
   "create a resolver which implements IDeref and whose
    deref method resolves the parameter for the application
-   app - an application
    ref - an ApplicationParamRef"
   [ref]
   (let [app-promise (promise)]

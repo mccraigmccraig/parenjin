@@ -29,21 +29,21 @@
                                               :enjin-deps {:mybars bardsdelay :mybazs bazdsdelay}) => ..enjin..)))
 
 (with-state-changes [(around :facts (let [spec {:enjins {:foos {:model ..foos-model..}
-                                                           :bars {:model ..bars-model..}}}]
+                                                         :bars {:model ..bars-model..}}}]
                                       ?form))]
   (fact "create-enjins should create all enjins from specifications"
 
     (-> (#'app/create-enjins ..connectors.. spec) :foos) => ..foos-enjin..
 
     (provided
-      (enj/create-enjin ..foos-model.. :params nil :connectors {} :enjin-deps {}) => ..foos-enjin..
-      (enj/create-enjin ..bars-model.. :params nil :connectors {} :enjin-deps {}) => ..bars-enjin..)
+      (enj/create-enjin ..foos-model.. :params {} :connectors {} :enjin-deps {}) => ..foos-enjin..
+      (enj/create-enjin ..bars-model.. :params {} :connectors {} :enjin-deps {}) => ..bars-enjin..)
 
     (-> (#'app/create-enjins ..connectors.. spec) :bars) => ..bars-enjin..
 
     (provided
-      (enj/create-enjin ..foos-model.. :params nil :connectors {} :enjin-deps {}) => ..foos-enjin..
-      (enj/create-enjin ..bars-model.. :params nil :connectors {} :enjin-deps {}) => ..bars-enjin..)))
+      (enj/create-enjin ..foos-model.. :params {} :connectors {} :enjin-deps {}) => ..foos-enjin..
+      (enj/create-enjin ..bars-model.. :params {} :connectors {} :enjin-deps {}) => ..bars-enjin..)))
 
 
 (def m (-> (enjm/create-enjin-model :foos)
@@ -51,11 +51,11 @@
            (enjm/requires-param :tag String)))
 
 (with-state-changes [(around :facts (let [spec {:enjins {:foosA {:model m
-                                                                   :params {:tag "foosA"}
-                                                                   :enjin-deps {:other-foos :foosB}}
-                                                           :foosB {:model m
-                                                                   :params {:tag "foosB"}
-                                                                   :enjin-deps {:other-foos :foosA}}}}
+                                                                 :params {:tag "foosA"}
+                                                                 :enjin-deps {:other-foos :foosB}}
+                                                         :foosB {:model m
+                                                                 :params {:tag "foosB"}
+                                                                 :enjin-deps {:other-foos :foosA}}}}
                                           enjins (#'app/create-enjins {} spec)
                                           foosA (enjins :foosA)
                                           foosB (enjins :foosB)]
@@ -87,28 +87,23 @@
 
 (with-state-changes [(around :facts (let [spec {:connectors {:aconn ..aconn.. :bconn ..bconn.. :webconn ..web-connector..}
                                                 :enjins {:foomsA {:model n
-                                                                    :params {:tag "foomsA"}
-                                                                    :webservices [:foo :bar]}
-                                                           :foomsB {:model n
-                                                                    :params {:tag "foomsB"}
-                                                                    :webservices [:bar :baz]}}
+                                                                  :params {:tag "foomsA"}
+                                                                  :webservices [:foo :bar]}
+                                                         :foomsB {:model n
+                                                                  :params {:tag "foomsB"}
+                                                                  :webservices [:bar :baz]}}
                                                 :web {:connector :webconn}}
                                           conn (:connectors spec)
-                                          enjins {:foomsA {:application-promise* (promise)} :foomsB {:application-promise* (promise)}}]
+                                          enjs (#'app/create-enjins {} spec)]
+
                                       ?form))]
   (fact "create-application* should create an application from a specification"
     (app-spec (#'app/create-application* spec)) => spec
-    (provided
-      (#'app/create-enjins conn spec) => enjins)
-
     (web-connector (#'app/create-application* spec)) => ..web-connector..
-    (provided
-      (#'app/create-enjins conn spec) => enjins)
+    (enjins (#'app/create-application* spec)) => enjs
 
-    (enjins (#'app/create-application* spec)) => enjins
-    (enj/application (first (enjins (#'app/create-application* spec)))) => 100
     (provided
-      (#'app/create-enjins conn spec) => enjins)))
+      (#'app/create-enjins conn spec) => enjs)))
 
 (with-state-changes [(around :facts (let [model (-> (enjm/create-enjin-model :fooms)
                                                     (enjm/requires-param :tag String))
@@ -182,23 +177,23 @@
     (provided
       (#'app/create-application* ..app-spec..) => ..app..)))
 
-;; don't know how to test this : midje acts funny if the method under test is
-;; also in a provided block
+;; ;; don't know how to test this : midje acts funny if the method under test is
+;; ;; also in a provided block
 
 
-;; (with-state-changes [(around :facts (let [app-proxy (create-application ..app-spec..)]
-;;                                       ?form))]
-;;   (fact "web-connector should create the app and proxy to it"
-;;     (web-connector app-proxy) => ..web-conn..
-;;     (provided
-;;       (#'app/create-application* ..app-spec..) => ..app..
-;;       (web-connector ..app..) => ..web-conn..)))
+;; ;; (with-state-changes [(around :facts (let [app-proxy (create-application ..app-spec..)]
+;; ;;                                       ?form))]
+;; ;;   (fact "web-connector should create the app and proxy to it"
+;; ;;     (web-connector app-proxy) => ..web-conn..
+;; ;;     (provided
+;; ;;       (#'app/create-application* ..app-spec..) => ..app..
+;; ;;       (web-connector ..app..) => ..web-conn..)))
 
-;; (with-state-changes [(around :facts (let [app-proxy (create-application ..app-spec..)]
-;;                                       ?form))]
-;;   (fact "create-web-routes should create the app and proxy to it"
-;;     (create-web-routes app-proxy) => ..web-routes..
-;;     (provided
-;;       (#'app/create-application* ..app-spec..) => ..app..
-;;       (create-web-routes ..app..) => ..web-routes..
-;;       )))
+;; ;; (with-state-changes [(around :facts (let [app-proxy (create-application ..app-spec..)]
+;; ;;                                       ?form))]
+;; ;;   (fact "create-web-routes should create the app and proxy to it"
+;; ;;     (create-web-routes app-proxy) => ..web-routes..
+;; ;;     (provided
+;; ;;       (#'app/create-application* ..app-spec..) => ..app..
+;; ;;       (create-web-routes ..app..) => ..web-routes..
+;; ;;       )))
