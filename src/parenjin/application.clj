@@ -103,10 +103,15 @@
   [app-spec]
   (let [connector-registry (util/resolve-obj (:connectors app-spec))
         enjins (create-enjins connector-registry app-spec)
-        web-connector (connector-registry (get-in app-spec [:web :connector]))]
-    (map->application {:app-spec* app-spec
-                       :web-connector* web-connector
-                       :enjins* enjins})))
+        web-connector (connector-registry (get-in app-spec [:web :connector]))
+        application (map->application {:app-spec* app-spec
+                                       :web-connector* web-connector
+                                       :enjins* enjins})]
+    ;; deliver the application to all it's enjins
+    (->> enjins
+         (map (fn [[id enjin]] (deliver (:application-promise* enjin) application)))
+         dorun)
+    application))
 
 (defprotocol ApplicationProxy
   (create [this])
