@@ -71,12 +71,14 @@ For each Enjin specification
 * `:webservices` specifies :none, :all or a list of webservice-ids for Enjin webservices to be mounted on the app `:web :connector` on app start
 
     (require '[parenjin.application :as app])
+
     (def app-spec {:connectors :my-project.connectors.registry ;; a map of connector objects by id
                    :enjins {:twitter {:model :my-project.enjins.twitter/model
                                       :connectors {:postgresql :postgresql} ;; maps a connector from the registry to the Datasource id
                                       :params {:prefix #app/param :app-prefix} ;; references the application param :app-prefix
                                       :services :none            ;; don't run any of the Enjin's services
                                       :webservices :all}         ;; mount all of the Enjin's webservices
+
                             :foos {:model m
                                    :connectors {:postgresql :postgresql}
                                    :params {:prefix #app/param :app-prefix  ;; references the application param :app-prefix
@@ -88,11 +90,15 @@ For each Enjin specification
                          :some-param :blah                    ;; additional params given to clomponent/create
                       ;; :routes <routes-from-enjins>       ;; along with routes gotten from enjins
                         }})
+
     (def app (app/create-application app-spec))
+
     (app/start app) ;; mount specified webservices, start specified services for each enjin
     (app/stop app)  ;; unmount webservices, stop all jobs and services for each enjin
+
     (def twitter (app/enjin app :twitter))
     (def foos (app/enjin app :foos))
+
     (enj/with-params foos {:prefix "BOO"}
       (enj/param foos :prefix)     ;; => "BOO" ;; Enjin reference params can be set dynamically
       (enj/param twitter :prefix)  ;; => "BOO" ;; and all other Enjins sharing the same reference param will see the value
