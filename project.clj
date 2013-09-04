@@ -3,6 +3,8 @@
     [org.clojure/tools.logging "0.2.6"]
     [org.clojure/core.incubator "0.1.2"]
 
+    [potemkin "0.3.3"]
+
     [clomponents "0.5.0"]
     [compojure "1.1.5"]
     ])
