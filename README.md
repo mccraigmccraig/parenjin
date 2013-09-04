@@ -55,7 +55,7 @@ An Application consists of :
 
 The application specification is a clojure datastructure which defines how the Application is to get it's web-connector and construct it's Enjins
 
-* `:connectors` is a map of connector objects, which may be referenced by datasets
+* `:connectors` is a map of connector objects, which may be referenced by Enjins
 * `:enjins` is a map of Enjin specifications
 * `:web` specifies a web-connector, which must be present in the `:connectors` map
 
@@ -66,7 +66,7 @@ For each Enjin specification
 * `:params` provides values to satisfy the Enjin param requirements. the #app/param reader-macro can be used to create a reference to an
    application parameter, which can be set dynamically. All references (from any Enjin) to the same application parameter refer to the
    same value, so Enjins can be declared to share paramters
-* `:enjin-deps` specifies how the Enjin dependency requirements are to be satisfied from the apps `:datasets`
+* `:enjin-deps` specifies how the Enjin dependency requirements are to be satisfied from the apps `:enjins`
 * `:services` specifies :none, :all, or a list of service-ids for Enjin services to be run on app start
 * `:webservices` specifies :none, :all or a list of webservice-ids for Enjin webservices to be mounted on the app `:web :connector` on app start
 
