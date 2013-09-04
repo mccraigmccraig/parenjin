@@ -2,8 +2,8 @@
   (:use midje.sweet
         parenjin.application)
   (:require [parenjin.application :as app]
-            [parenjin.enjin :as ds]
-            [parenjin.enjin-model :as dsm]
+            [parenjin.enjin :as enj]
+            [parenjin.enjin-model :as enjm]
             [compojure.core :as compojure]
             [clomponents.control :as clomp]))
 
@@ -23,7 +23,7 @@
                           (delay {:bars bardsdelay  :bazs bazdsdelay})
                           spec) => ..enjin..
                           (provided
-                            (dsm/create-enjin ..model..
+                            (enjm/create-enjin ..model..
                                                 :params params
                                                 :connectors {:myx ..xconn.. :myy ..yconn..}
                                                 :enjin-deps {:mybars bardsdelay :mybazs bazdsdelay}) => ..enjin..)))
@@ -36,19 +36,19 @@
     (-> (#'app/create-enjins ..connectors.. spec) :foos) => ..foos-enjin..
 
     (provided
-      (dsm/create-enjin ..foos-model.. :params nil :connectors {} :enjin-deps {}) => ..foos-enjin..
-      (dsm/create-enjin ..bars-model.. :params nil :connectors {} :enjin-deps {}) => ..bars-enjin..)
+      (enjm/create-enjin ..foos-model.. :params nil :connectors {} :enjin-deps {}) => ..foos-enjin..
+      (enjm/create-enjin ..bars-model.. :params nil :connectors {} :enjin-deps {}) => ..bars-enjin..)
 
     (-> (#'app/create-enjins ..connectors.. spec) :bars) => ..bars-enjin..
 
     (provided
-      (dsm/create-enjin ..foos-model.. :params nil :connectors {} :enjin-deps {}) => ..foos-enjin..
-      (dsm/create-enjin ..bars-model.. :params nil :connectors {} :enjin-deps {}) => ..bars-enjin..)))
+      (enjm/create-enjin ..foos-model.. :params nil :connectors {} :enjin-deps {}) => ..foos-enjin..
+      (enjm/create-enjin ..bars-model.. :params nil :connectors {} :enjin-deps {}) => ..bars-enjin..)))
 
 
-(def m (-> (dsm/create-enjin-model :foos)
-           (dsm/requires-enjin :other-foos :foos)
-           (dsm/requires-param :tag String)))
+(def m (-> (enjm/create-enjin-model :foos)
+           (enjm/requires-enjin :other-foos :foos)
+           (enjm/requires-param :tag String)))
 
 (with-state-changes [(around :facts (let [spec {:enjins {:foosA {:model m
                                                                    :params {:tag "foosA"}
@@ -67,8 +67,8 @@
     (-> foosB :params* :tag) => "foosB"
     (-> foosB :enjin-deps* :other-foos deref) => foosA))
 
-(def n (-> (dsm/create-enjin-model :fooms)
-           (dsm/requires-param :tag String)))
+(def n (-> (enjm/create-enjin-model :fooms)
+           (enjm/requires-param :tag String)))
 
 (with-state-changes [(around :facts (let [spec {:enjins {:foomsA {:model n
                                                                    :params {:tag "foomsA"}
@@ -82,8 +82,8 @@
   (fact "create-web-routes* should create web-routes according to an app specification"
     (#'app/create-web-routes* spec enjins) => [..fooms-a-route-1.. ..fooms-a-route-2.. ..fooms-b-route-1.. ..fooms-b-route-2..]
     (provided
-      (ds/create-webservices foomsA [:foo :bar]) => [..fooms-a-route-1.. ..fooms-a-route-2..]
-      (ds/create-webservices foomsB :all) => [..fooms-b-route-1.. ..fooms-b-route-2..])))
+      (enj/create-webservices foomsA [:foo :bar]) => [..fooms-a-route-1.. ..fooms-a-route-2..]
+      (enj/create-webservices foomsB :all) => [..fooms-b-route-1.. ..fooms-b-route-2..])))
 
 (with-state-changes [(around :facts (let [spec {:connectors {:aconn ..aconn.. :bconn ..bconn.. :webconn ..web-connector..}
                                                 :enjins {:foomsA {:model n
@@ -109,8 +109,8 @@
     (provided
       (#'app/create-enjins conn spec) => ds)))
 
-(with-state-changes [(around :facts (let [model (-> (dsm/create-enjin-model :fooms)
-                                                    (dsm/requires-param :tag String))
+(with-state-changes [(around :facts (let [model (-> (enjm/create-enjin-model :fooms)
+                                                    (enjm/requires-param :tag String))
 
                                           spec {:connectors {:aconn ..aconn.. :bconn ..bconn.. :webconn ..webconn..}
                                                 :enjins {:foomsA {:model model
@@ -134,13 +134,13 @@
     (provided
       (#'app/create-enjins conn spec) => ds
 
-      (ds/start-services foomsA ..fooms-a-services..) => true
-      (ds/start-services foomsB ..fooms-b-services..) => true
+      (enj/start-services foomsA ..fooms-a-services..) => true
+      (enj/start-services foomsB ..fooms-b-services..) => true
       (clomp/destroy ..webconn..) => true
       (clomp/create ..webconn.. {:connector :webconn :app ..proxy..}) => true)))
 
-(with-state-changes [(around :facts (let [model (-> (dsm/create-enjin-model :fooms)
-                                                    (dsm/requires-param :tag String))
+(with-state-changes [(around :facts (let [model (-> (enjm/create-enjin-model :fooms)
+                                                    (enjm/requires-param :tag String))
 
                                           spec {:connectors {:aconn ..aconn.. :bconn ..bconn.. :webconn ..web-connector..}
                                                 :enjins {:foomsA {:model model
@@ -163,8 +163,8 @@
     (provided
       (#'app/create-enjins conn spec) => ds
 
-      (ds/stop-services foomsA :all) => true
-      (ds/stop-services foomsB :all) => true
+      (enj/stop-services foomsA :all) => true
+      (enj/stop-services foomsB :all) => true
       (clomp/destroy ..web-connector..) => true)))
 
 

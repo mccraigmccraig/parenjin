@@ -1,7 +1,7 @@
 (ns parenjin.enjin-test
   (:use midje.sweet
         parenjin.enjin)
-  (:require [parenjin.enjin :as ds]
+  (:require [parenjin.enjin :as enj]
             [parenjin.util :as util]
             [compojure.core :as compojure])
   (:import [clojure.lang ExceptionInfo]
@@ -17,10 +17,10 @@
               :services ..services..
               :webservices ..webservices..}]
 
-    (apply #'ds/check-requirements (apply concat args)) => true
+    (apply #'enj/check-requirements (apply concat args)) => true
 
     (provided
-      (util/check-map @#'ds/check-requirements-arg-specs args) => true
+      (util/check-map @#'enj/check-requirements-arg-specs args) => true
       (util/check-map ..param-reqs.. ..params..) => true
       (util/check-map ..connector-reqs.. ..connectors..) => true)))
 
@@ -28,14 +28,14 @@
                                              result (promise)]
                                          ?form ))]
   (fact "start-or-noop should start a never started task"
-    (#'ds/start-or-noop ..this.. trackref {:foo (fn [this] this => ..this.. (deliver result true) (Thread/sleep 100))} :foo) => :running
+    (#'enj/start-or-noop ..this.. trackref {:foo (fn [this] this => ..this.. (deliver result true) (Thread/sleep 100))} :foo) => :running
     @result => true))
 
 (with-state-changes [(around :facts (let [trackref (ref {:foo (future (Thread/sleep 100) ..result..)})
                                              result (promise)]
                                          ?form ))]
   (fact "start-or-noop should do nothing to a running task"
-    (#'ds/start-or-noop ..this.. trackref {:foo (fn [this] this => ..this.. (deliver result true) (Thread/sleep 100))} :foo) => :running
+    (#'enj/start-or-noop ..this.. trackref {:foo (fn [this] this => ..this.. (deliver result true) (Thread/sleep 100))} :foo) => :running
     (deref result 100 ..nocall..) => ..nocall..))
 
 (with-state-changes [(around :facts (let [b (promise)
@@ -44,47 +44,47 @@
                                          ?form ))]
   (fact "start-or-noop should start a stopped task"
     @b => true
-    (#'ds/start-or-noop ..this.. trackref {:foo (fn [this] this => ..this.. (deliver a ..running..) (Thread/sleep 100) ..after-result..)} :foo) => :running
+    (#'enj/start-or-noop ..this.. trackref {:foo (fn [this] this => ..this.. (deliver a ..running..) (Thread/sleep 100) ..after-result..)} :foo) => :running
     @a => ..running..
     (-> trackref deref :foo deref) => ..after-result..))
 
 (with-state-changes [(around :facts (let [trackref (ref {})]
                                          ?form ))]
   (fact "stop-or-noop should do nothing to a never started task"
-    (#'ds/stop-or-noop ..this.. trackref :foo) => :none
+    (#'enj/stop-or-noop ..this.. trackref :foo) => :none
     (-> trackref deref :foo) => nil))
 
 (with-state-changes [(around :facts (let [trackref (ref {:foo (future (Thread/sleep 100) ..result..)})]
                                          ?form ))]
   (fact "stop-or-noop should stop a running task"
-    (#'ds/stop-or-noop ..this.. trackref :foo) => :stopped
+    (#'enj/stop-or-noop ..this.. trackref :foo) => :stopped
     (-> trackref deref :foo deref) => (throws CancellationException)))
 
 (with-state-changes [(around :facts (let [trackref (ref {:foo (future ..result..)})]
                                          ?form ))]
   (fact "stop-or-noop should do nothing to a stopped task"
     (-> trackref deref :foo deref) => ..result..
-    (#'ds/stop-or-noop ..this.. trackref :foo) => :stopped))
+    (#'enj/stop-or-noop ..this.. trackref :foo) => :stopped))
 
 (fact "choose-ids should choose ids"
-  (#'ds/choose-ids :all ..all-ids..) => ..all-ids..
-  (#'ds/choose-ids :none ..all-ids..) => []
-  (set (#'ds/choose-ids [..a.. ..b.. ..c.. ..d..] [..e.. ..d.. ..b.. ..d..])) => #{..b.. ..d..})
+  (#'enj/choose-ids :all ..all-ids..) => ..all-ids..
+  (#'enj/choose-ids :none ..all-ids..) => []
+  (set (#'enj/choose-ids [..a.. ..b.. ..c.. ..d..] [..e.. ..d.. ..b.. ..d..])) => #{..b.. ..d..})
 
 (defn nofn [this id])
 (fact "map-over-ids should map a protocol method over some ids"
-  (#'ds/map-over-ids ..this.. nofn :all [..id-a.. ..id-b..]) => [..a.. ..b..]
+  (#'enj/map-over-ids ..this.. nofn :all [..id-a.. ..id-b..]) => [..a.. ..b..]
   (provided
     (nofn ..this.. ..id-a..) => ..a..
     (nofn ..this.. ..id-b..) => ..b..))
 
 (fact "create-simple-enjin* should create a enjin with just a model"
-  (#'ds/create-simple-enjin*) => (throws RuntimeException)
-  (model  (#'ds/create-simple-enjin* :model ..model..)) => ..model..)
+  (#'enj/create-simple-enjin*) => (throws RuntimeException)
+  (model  (#'enj/create-simple-enjin* :model ..model..)) => ..model..)
 
 (defn csd
   [& [overrides]]
-  (#'ds/create-simple-enjin* :model (or (:model overrides) ..model..)
+  (#'enj/create-simple-enjin* :model (or (:model overrides) ..model..)
                                :params (or (:params overrides) ..params..)
                                :connectors (or (:connectors overrides) ..connectors..)
                                :enjin-deps (or (:enjin-deps overrides) ..enjin-deps..)
@@ -101,7 +101,7 @@
   (services (csd)) => ..services..
   (webservices (csd)) => ..webservices..
   (provided
-    (#'ds/check-requirements :model ..model..
+    (#'enj/check-requirements :model ..model..
                              :params ..params..
                              :connectors ..connectors..
                              :enjin-deps ..enjin-deps..
@@ -130,13 +130,13 @@
         rj (:running-jobs* ds)]
     (start-job ds :foo) => ..started..
     (provided
-      (#'ds/start-or-noop ds rj ..jobs.. :foo) => ..started..)))
+      (#'enj/start-or-noop ds rj ..jobs.. :foo) => ..started..)))
 
 (fact "start-jobs should start some jobs"
   (let [ds (fsd {:jobs {:foo ..foo-job.. :bar ..bar-job.. :baz ..baz-job..}})]
     (start-jobs ds [:foo :bar]) => ..started..
     (provided
-      (#'ds/map-over-ids ds start-job [:foo :bar] [:foo :bar :baz]) => ..started..)))
+      (#'enj/map-over-ids ds start-job [:foo :bar] [:foo :bar :baz]) => ..started..)))
 
 (fact "job-status should return the status of a job"
   (let [ds (fsd {:running-jobs {:foo ..foo-future..}})]
@@ -149,26 +149,26 @@
         rj (:running-jobs* ds)]
     (stop-job ds :foo) => ..stopped..
     (provided
-      (#'ds/stop-or-noop ds rj :foo) => ..stopped..)))
+      (#'enj/stop-or-noop ds rj :foo) => ..stopped..)))
 
 (fact "stop-jobs should stop some jobs"
   (let [ds (fsd {:jobs {:foo ..foo-job.. :bar ..bar-job.. :baz ..baz-job..}})]
     (stop-jobs ds [:foo :bar]) => ..stopped..
     (provided
-      (#'ds/map-over-ids ds stop-job [:foo :bar] [:foo :bar :baz]) => ..stopped..)))
+      (#'enj/map-over-ids ds stop-job [:foo :bar] [:foo :bar :baz]) => ..stopped..)))
 
 (fact "start-service should start a service"
   (let [ds (fsd)
         rj (:running-services* ds)]
     (start-service ds :foo) => ..started..
     (provided
-      (#'ds/start-or-noop ds rj ..services.. :foo) => ..started..)))
+      (#'enj/start-or-noop ds rj ..services.. :foo) => ..started..)))
 
 (fact "start-services should start some services"
   (let [ds (fsd {:services {:foo ..foo-job.. :bar ..bar-job.. :baz ..baz-job..}})]
     (start-services ds [:foo :bar]) => ..started..
     (provided
-      (#'ds/map-over-ids ds start-service [:foo :bar] [:foo :bar :baz]) => ..started..)))
+      (#'enj/map-over-ids ds start-service [:foo :bar] [:foo :bar :baz]) => ..started..)))
 
 (fact "service-status should return the status of a service"
   (let [ds (fsd {:running-services {:foo ..foo-future..}})]
@@ -181,13 +181,13 @@
         rs (:running-services* ds)]
     (stop-service ds :foo) => ..stopped..
     (provided
-      (#'ds/stop-or-noop ds rs :foo) => ..stopped..)))
+      (#'enj/stop-or-noop ds rs :foo) => ..stopped..)))
 
 (fact "stop-services should stop some services"
   (let [ds (fsd {:services {:foo ..foo-job.. :bar ..bar-job.. :baz ..baz-job..}})]
     (stop-services ds [:foo :bar]) => ..stopped..
     (provided
-      (#'ds/map-over-ids ds stop-service [:foo :bar] [:foo :bar :baz]) => ..stopped..)))
+      (#'enj/map-over-ids ds stop-service [:foo :bar] [:foo :bar :baz]) => ..stopped..)))
 
 (fact "create-webservice should create some compojure routes"
   (let [ds (fsd {:webservices {:foo (fn [enjin] enjin =not=> nil ..webservice..)}})]

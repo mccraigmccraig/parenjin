@@ -1,8 +1,8 @@
 (ns parenjin.enjin-model-test
   (:use midje.sweet
         parenjin.enjin-model)
-  (:require [parenjin.enjin :as ds]
-            [parenjin.enjin-model :as dsm]))
+  (:require [parenjin.enjin :as enj]
+            [parenjin.enjin-model :as enjm]))
 
 (fact "create-enjin-model should create a EnjinModel"
   (let [m (create-enjin-model :foo)]
@@ -56,7 +56,7 @@
                                                  (defservice :b-service ..b-service..)
                                                  (defwebservice :a-webservice ..a-webservice..)
                                                  (defwebservice :b-webservice ..b-webservice..))
-                                          pm (#'dsm/persist-model m)]
+                                          pm (#'enjm/persist-model m)]
                                        ?form))]
   (fact "persist-model should create a map of the model content"
     (:param-reqs pm) => {:a-param ..a-param-type.. :b-param ..b-param-type..}
@@ -93,7 +93,7 @@
     => ..ds..
 
     (provided
-      (#'ds/create-simple-enjin* :model (#'dsm/persist-model m)
+      (#'enj/create-simple-enjin* :model (#'enjm/persist-model m)
                                    :params {:param-a ..param-a.. :param-b ..param-b..}
                                    :connectors {:conn-a ..conn-a.. :conn-b ..conn-b..}
                                    :enjin-deps {:ds-a ..ds-a.. :ds-b ..ds-b..}
