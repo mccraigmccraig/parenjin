@@ -1,4 +1,4 @@
-(ns parenjin.enjin-dynamic-param
+(ns parenjin.enjin-ref-param
   (:use clojure.core.strint
         midje.open-protocols)
   (:require [parenjin.application-param :as aparam])

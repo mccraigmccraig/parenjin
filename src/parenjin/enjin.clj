@@ -7,7 +7,7 @@
             [compojure.core :as compojure]
             [parenjin.util :as util]
             [parenjin.enjin-model :as enjm]
-            [parenjin.enjin-dynamic-param :as enjdp])
+            [parenjin.enjin-ref-param :as enjrp])
   (:import [parenjin.enjin_model EnjinModel]))
 
 (def ^:private check-requirements-arg-specs
@@ -140,7 +140,7 @@
   "wrap forms in a lambda, and call with current enjin bound"
   [enjin & forms] `(with-enjin* ~enjin (fn [] ~@forms)))
 
-(import-vars [parenjin.enjin-dynamic-param with-params* with-params])
+(import-vars [parenjin.enjin-ref-param with-params* with-params])
 
 (defn- wrap-current-enjin
   "wrap a compojure handler in a with-enjin form so that
