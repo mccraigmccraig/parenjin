@@ -1,11 +1,13 @@
 (ns parenjin.enjin
   (:use midje.open-protocols
         clojure.core.strint
-        clojure.core.incubator)
+        clojure.core.incubator
+        potemkin)
   (:require [clojure.set :as set]
             [compojure.core :as compojure]
             [parenjin.util :as util]
-            [parenjin.enjin-model :as enjm])
+            [parenjin.enjin-model :as enjm]
+            [parenjin.enjin-dynamic-param :as enjdp])
   (:import [parenjin.enjin_model EnjinModel]))
 
 (def ^:private check-requirements-arg-specs
@@ -122,6 +124,31 @@
   (create-webservices [this webservice-ids]
     "create webservices with ids <webservice-ids> which may be a list of ids or :all"))
 
+(def ^:private ^:dynamic *current-enjin* nil)
+
+(defn current-enjin
+  "get the current enjin"
+  []
+  *current-enjin*)
+
+(defn with-enjin*
+  "bind *current-enjin* and call function f"
+  [enjin f]
+  (with-bindings {#'*current-enjin* enjin} f))
+
+(defmacro with-enjin
+  "wrap forms in a lambda, and call with current enjin bound"
+  [enjin & forms] `(with-enjin* ~enjin (fn [] ~@forms)))
+
+(import-vars [parenjin.enjin-dynamic-param with-params* with-params])
+
+(defn- wrap-current-enjin
+  "wrap a compojure handler in a with-enjin form so that
+   the enjin is available during compojure request handling"
+  [handler enjin]
+  (fn [& params]
+    (with-enjin enjin
+      (apply handler params))))
 
 (defrecord-openly simple-enjin [model* application-promise* params* connectors* enjin-deps* jobs* services* webservices* running-jobs* running-services*]
   Enjin
@@ -233,13 +260,3 @@
 (defmethod print-dup simple-enjin
   [enjin writer]
   (print-enjin enjin writer))
-
-(def ^:private ^:dynamic *current-enjin* nil)
-
-(defn with-enjin*
-  ([enjin f] (with-enjin* enjin {} f))
-  ([enjin params f]
-     (with-bindings {#'*current-enjin* enjin} f)))
-
-(defmacro with-enjin
-  [enjin params & forms] `(with-enjin* ~enjin ~params (fn [] ~@forms)))

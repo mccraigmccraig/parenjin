@@ -1,5 +1,6 @@
 (ns parenjin.application-param
   (:use midje.open-protocols)
+  (:require [parenjin.application-proxy :as aproxy])
   (:import [parenjin.application_proxy ApplicationProxy]))
 
 (defprotocol ApplicationParamRef
