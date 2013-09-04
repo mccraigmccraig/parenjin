@@ -94,20 +94,21 @@
                                                                     :webservices [:bar :baz]}}
                                                 :web {:connector :webconn}}
                                           conn (:connectors spec)
-                                          ds {:foomsA ..ds-foomsa.. :foomsB ..ds-foomsb..}]
+                                          enjins {:foomsA {:application-promise* (promise)} :foomsB {:application-promise* (promise)}}]
                                       ?form))]
   (fact "create-application* should create an application from a specification"
     (app-spec (#'app/create-application* spec)) => spec
     (provided
-      (#'app/create-enjins conn spec) => ds)
+      (#'app/create-enjins conn spec) => enjins)
 
     (web-connector (#'app/create-application* spec)) => ..web-connector..
     (provided
-      (#'app/create-enjins conn spec) => ds)
+      (#'app/create-enjins conn spec) => enjins)
 
-    (enjins (#'app/create-application* spec)) => ds
+    (enjins (#'app/create-application* spec)) => enjins
+    (enj/application (first (enjins (#'app/create-application* spec)))) => 100
     (provided
-      (#'app/create-enjins conn spec) => ds)))
+      (#'app/create-enjins conn spec) => enjins)))
 
 (with-state-changes [(around :facts (let [model (-> (enjm/create-enjin-model :fooms)
                                                     (enjm/requires-param :tag String))

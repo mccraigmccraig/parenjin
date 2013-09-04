@@ -228,8 +228,7 @@
 
 (defmethod print-method simple-enjin
   [enjin writer]
-  (print-enjin enjin writer)
-  )
+  (print-enjin enjin writer))
 
 (defmethod print-dup simple-enjin
   [enjin writer]

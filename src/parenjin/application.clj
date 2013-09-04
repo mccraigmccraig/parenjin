@@ -4,7 +4,8 @@
             [compojure.core :as compojure]
             [parenjin.util :as util]
             [parenjin.enjin :as enj]
-            [parenjin.enjin-model :as dsm]))
+            [parenjin.enjin-model :as dsm]
+            [parenjin.application-param :as aparam]))
 
 (defprotocol Application
 
