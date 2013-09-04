@@ -16,19 +16,12 @@
 
 (def ^:private ^:dynamic *application-params* {})
 
-(defn with-params*
-  [app params f]
-  (let [use-app (if (instance? ApplicationProxy app)
-                  @(:app* app)
-                  app)
-        new-params (assoc *application-params* use-app params)]
-    (with-bindings* {#'*application-params* new-params} f)))
-
 (defn- resolve-param
   [app ref]
   (get-in *application-params* [app ref]))
 
 (defprotocol ApplicationParamResolver
+  (get-param-ref [this])
   (set-application [this application]
     "allow an application to be given to the param resolver after it's creation"))
 
@@ -44,4 +37,13 @@
         (resolve-param (deref app-promise 0 nil) (param-ref ref)))
 
       ApplicationParamResolver
+      (get-param-ref [this] (param-ref ref))
       (set-application [this application] (deliver app-promise application)))))
+
+(defn with-params*
+  [app params f]
+  (let [use-app (if (instance? ApplicationProxy app)
+                  @(:app* app)
+                  app)
+        new-params (assoc *application-params* use-app params)]
+    (with-bindings* {#'*application-params* new-params} f)))
