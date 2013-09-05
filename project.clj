@@ -10,8 +10,8 @@
     ])
 
 
-(defproject clopp "0.2.0"
-  :description "parenjin : "
+(defproject parenjin "0.2.0-SNAPSHOT"
+  :description "parenjin : Parameterisable Application Engines for Compojure"
 
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
