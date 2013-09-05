@@ -26,6 +26,12 @@
   (set-application [this application]
     "allow an application to be given to the param resolver after it's creation"))
 
+(defn- unwrap-application
+  [app]
+  (if (instance? ApplicationProxy app)
+    @(:app* app)
+    app))
+
 (defn param-resolver
   "create a resolver which implements IDeref and whose
    deref method resolves the parameter for the application
@@ -39,12 +45,10 @@
 
       ApplicationParamResolver
       (get-param-ref [this] (param-ref ref))
-      (set-application [this application] (deliver app-promise application)))))
+      (set-application [this application] (deliver app-promise (unwrap-application application))))))
 
 (defn with-params*
   [app params f]
-  (let [use-app (if (instance? ApplicationProxy app)
-                  @(:app* app)
-                  app)
+  (let [use-app (unwrap-application app)
         new-params (assoc *application-params* use-app params)]
     (with-bindings* {#'*application-params* new-params} f)))
