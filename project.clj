@@ -10,7 +10,7 @@
     ])
 
 
-(defproject parenjin "0.2.0-SNAPSHOT"
+(defproject parenjin "0.3.0-SNAPSHOT"
   :description "parenjin : Parameterisable Application Engines for Compojure"
 
   :license {:name "Eclipse Public License"
