@@ -4,8 +4,7 @@
   (:require [parenjin.application :as app]
             [parenjin.enjin :as enj]
             [parenjin.enjin-model :as enjm]
-            [compojure.core :as compojure]
-            [clomponents.control :as clomp]))
+            [compojure.core :as compojure]))
 
 (with-state-changes [(around :facts (let [spec {:model ..model..
                                                 :params {:aparam 10 :anotherparam "boo"}
@@ -108,31 +107,24 @@
   (fact "the app-spec should be stored in the proxy"
     (app-spec app-proxy) => ..app-spec..))
 
-(with-state-changes [(around :facts (let [app-proxy (create-application ..app-spec..)]
-                                      ?form))]
-  (fact "create should create an app to proxy to"
+(fact "create* should create an application if necessary"
 
-    @(:app* (create app-proxy)) => ..app..
-    (provided
-      (#'app/create-application* ..app-spec..) => ..app..)))
+  (#'app/create* ..app-spec.. (atom nil)) => ..app..
+  (provided
+    (#'app/create-application* ..app-spec..) => ..app..))
 
-;; ;; don't know how to test this : midje acts funny if the method under test is
-;; ;; also in a provided block
+(fact "create* should return an existing application"
+  (#'app/create* ..app-spec.. (atom ..app..)) => ..app..)
 
+(fact "create-webservice* should create a production-mode webservice"
+  (#'app/create-webservice* ..app.. false) => ..webservice..
+  (provided
+    (#'app/create-web-routes ..app..) => [..route.. ..another-route..]
+    (compojure/routes ..route.. ..another-route..) => ..webservice..))
 
-;; ;; (with-state-changes [(around :facts (let [app-proxy (create-application ..app-spec..)]
-;; ;;                                       ?form))]
-;; ;;   (fact "web-connector should create the app and proxy to it"
-;; ;;     (web-connector app-proxy) => ..web-conn..
-;; ;;     (provided
-;; ;;       (#'app/create-application* ..app-spec..) => ..app..
-;; ;;       (web-connector ..app..) => ..web-conn..)))
-
-;; ;; (with-state-changes [(around :facts (let [app-proxy (create-application ..app-spec..)]
-;; ;;                                       ?form))]
-;; ;;   (fact "create-web-routes should create the app and proxy to it"
-;; ;;     (create-web-routes app-proxy) => ..web-routes..
-;; ;;     (provided
-;; ;;       (#'app/create-application* ..app-spec..) => ..app..
-;; ;;       (create-web-routes ..app..) => ..web-routes..
-;; ;;       )))
+(fact "create-webservice* should create a dev-mode webservice"
+  ((#'app/create-webservice* ..app.. true) ..request..) =>  ..webservice-result..
+  (provided
+    (app/destroy ..app..) => ..app..
+    (app/create-web-routes ..app..) => [..route.. ..another-route..]
+    (compojure/routing [..route.. ..another-route..]) => ..webservice-result..))

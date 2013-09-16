@@ -1,8 +1,7 @@
 (ns parenjin.application
   (:use midje.open-protocols
         potemkin)
-  (:require [clomponents.control :as clomp]
-            [compojure.core :as compojure]
+  (:require [compojure.core :as compojure]
             [parenjin.util :as util]
             [parenjin.enjin :as enj]
             [parenjin.enjin-model :as dsm]
@@ -17,14 +16,14 @@
     - connectors
     - enjins, created from enjin-models by supplying enjin-model requirements
     - a specification, which supplies enjin-model requirements and dependencies, and defines
-      which of an enjins webservices are to be created with the enjin's create-webservice"
+      which of an enjins webservices are to be created for the application"
 
   (app-spec [this])
 
   (enjins [this])
   (enjin [this id])
 
-  (create-webservice [this]))
+  (create-web-routes [this]))
 
 (defn- create-web-routes*
   "given an app-spec and a bunch of enjins, create a set of compojure routes for the webservices
@@ -45,7 +44,7 @@
   (enjins [this] enjins*)
   (enjin [this id] (enjins* id))
 
-  (create-webservice [this] (create-web-routes* app-spec* enjins*)))
+  (create-web-routes [this] (create-web-routes* app-spec* enjins*)))
 
 (defn- fixup-params
   "replace any params which are ApplicationParamRefs with resolvers for the param"
@@ -112,22 +111,42 @@
 
     application))
 
-(import-vars [parenjin.application-proxy create destroy])
+(import-vars [parenjin.application-proxy destroy create-webservice])
+
+(defn- create-webservice*
+  "create a compojure route for the application.
+   - devmode : if true, then recreate the app and route on every request, if false
+               just create a route"
+  [app devmode]
+  (if devmode
+    (fn [request]
+      (destroy app)
+      (compojure/routing (create-web-routes app)))
+    (apply compojure/routes (create-web-routes app))))
+
+(defn- create*
+  "create an app if it hasn't already been created. returns the app"
+  [app-spec app-atom]
+  (swap! app-atom (fn [old-app] (if-not old-app
+                                 (create-application* app-spec)
+                                 old-app))))
 
 (defrecord-openly application-proxy [app-spec* app*]
   Application
 
   (app-spec [this] app-spec*)
 
-  (enjins [this] (create this) (enjins @app*))
-  (enjin [this id] (create this) (enjin @app* id))
+  (enjins [this] (enjins (create* app-spec* app*)))
+  (enjin [this id] (enjin (create* app-spec* app*) id))
 
-  (create-webservice [this] (create this) (create-webservice @app*))
+  (create-web-routes [this] (create-web-routes (create* app-spec* app*)))
 
   ApplicationProxy
 
-  (create [this] (if-not @app* (swap! app* (fn [_] (create-application* app-spec*)))) this)
-  (destroy [this] (when @app* (swap! app* (fn [_]))) this))
+  (destroy [this] (swap! app* (fn [_])) this)
+
+  (create-webservice [this] (create-webservice this false))
+  (create-webservice [this devmode] (create-webservice* (create* app-spec* app*) devmode)))
 
 (defn create-application
   "create an ApplicationProxy which can create and destroy the same application

@@ -5,7 +5,6 @@
 
     [potemkin "0.3.3"]
 
-    [clomponents "0.5.0"]
     [compojure "1.1.5"]
     ])
 
