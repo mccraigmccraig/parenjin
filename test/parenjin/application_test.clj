@@ -111,11 +111,9 @@
                                           spec {:connectors {:aconn ..aconn.. :bconn ..bconn.. :webconn ..webconn..}
                                                 :enjins {:foomsA {:model model
                                                                     :params {:tag "foomsA"}
-                                                                    :services ..fooms-a-services..
                                                                     :webservices [:foo :bar]}
                                                            :foomsB {:model model
                                                                     :params {:tag "foomsB"}
-                                                                    :services ..fooms-b-services..
                                                                     :webservices [:bar :baz]}}
                                                 :web {:connector :webconn}}
                                           conn (:connectors spec)
@@ -130,8 +128,6 @@
     (provided
       (#'app/create-enjins conn spec) => ds
 
-      (enj/start-services foomsA ..fooms-a-services..) => true
-      (enj/start-services foomsB ..fooms-b-services..) => true
       (clomp/destroy ..webconn..) => true
       (clomp/create ..webconn.. {:connector :webconn :app ..proxy..}) => true)))
 
@@ -141,11 +137,9 @@
                                           spec {:connectors {:aconn ..aconn.. :bconn ..bconn.. :webconn ..web-connector..}
                                                 :enjins {:foomsA {:model model
                                                                     :params {:tag "foomsA"}
-                                                                    :services ..fooms-a-services..
                                                                     :webservices [:foo :bar]}
                                                            :foomsB {:model model
                                                                     :params {:tag "foomsB"}
-                                                                    :services ..fooms-b-services..
                                                                     :webservices [:bar :baz]}}
                                                 :web {:connector :webconn}}
                                           conn (:connectors spec)
@@ -159,8 +153,6 @@
     (provided
       (#'app/create-enjins conn spec) => ds
 
-      (enj/stop-services foomsA :all) => true
-      (enj/stop-services foomsB :all) => true
       (clomp/destroy ..web-connector..) => true)))
 
 

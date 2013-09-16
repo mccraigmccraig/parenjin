@@ -55,20 +55,11 @@
   (enjin [this id] (enjins* id))
 
   (start* [this proxy]
-    (->> enjins*
-         (map (fn [[id enjin]]
-                (enj/start-services enjin (get-in app-spec* [:enjins id :services]))))
-         dorun)
     (clomp/destroy (web-connector this))
     (clomp/create (web-connector this) (merge (app-spec* :web) {:app (or proxy this)}))
     true)
 
   (stop [this]
-    (->> enjins*
-         (map (fn [[id enjin]]
-                (enj/stop-services enjin :all)
-                (enj/stop-jobs enjin :all)))
-         dorun)
     (clomp/destroy (web-connector this))
     true))
 

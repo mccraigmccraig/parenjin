@@ -14,8 +14,6 @@
               :params ..params..
               :connectors ..connectors..
               :enjin-deps ..enjin-deps..
-              :jobs ..jobs..
-              :services ..services..
               :webservices ..webservices..}]
 
     (apply #'enj/check-requirements (apply concat args)) => true
@@ -92,8 +90,6 @@
                               :params (or (:params overrides) ..params..)
                               :connectors (or (:connectors overrides) ..connectors..)
                               :enjin-deps (or (:enjin-deps overrides) ..enjin-deps..)
-                              :jobs (or (:jobs overrides) ..jobs..)
-                              :services (or (:services overrides) ..services..)
                               :webservices (or (:webservices overrides) ..webservices..)))
 
 (fact
@@ -101,22 +97,18 @@
   (params (csd)) => ..params..
   (connectors (csd)) => ..connectors..
   (enjin-deps (csd)) => ..enjin-deps..
-  (jobs (csd)) => ..jobs..
-  (services (csd)) => ..services..
   (webservices (csd)) => ..webservices..
   (provided
     (#'enj/check-requirements :model ..model..
                              :params ..params..
                              :connectors ..connectors..
                              :enjin-deps ..enjin-deps..
-                             :jobs ..jobs..
-                             :services ..services..
                              :webservices ..webservices..) => true))
 
 (fact "enjin with an IDeref parameter should check parameter type when param method retrieves param"
   (let [bar-param (atom nil)
         e (#'enj/create-simple-enjin* :model {:param-reqs {:bar String}}
-                                        :params {:bar bar-param})]
+                                      :params {:bar bar-param})]
 
     (param e :bar) => (throws RuntimeException)
 
@@ -129,79 +121,11 @@
                         :params* (or (:params overrides) ..params..)
                         :connectors* (or (:connectors overrides) ..connectors..)
                         :enjin-deps* (or (:enjin-deps overrides) ..enjin-deps..)
-                        :jobs* (or (:jobs overrides) ..jobs..)
-                        :services* (or (:services overrides) ..services..)
-                        :webservices* (or (:webservices overrides) ..webservices..)
-                        :running-jobs* (ref (or (:running-jobs overrides) {}))
-                        :running-services* (ref (or (:running-services overrides) {}))}))
+                        :webservices* (or (:webservices overrides) ..webservices..)}))
 
 (fact "enjin-dep should dereference an IPending requirement"
   (let [ds (fsd {:enjin-deps {:foo (delay ..dep-a..)}})]
     (enjin-dep ds :foo) => ..dep-a..))
-
-(fact "start-job should start a job"
-  (let [ds (fsd)
-        rj (:running-jobs* ds)]
-    (start-job ds :foo) => ..started..
-    (provided
-      (#'enj/start-or-noop ds rj ..jobs.. :foo) => ..started..)))
-
-(fact "start-jobs should start some jobs"
-  (let [ds (fsd {:jobs {:foo ..foo-job.. :bar ..bar-job.. :baz ..baz-job..}})]
-    (start-jobs ds [:foo :bar]) => ..started..
-    (provided
-      (#'enj/map-over-ids ds start-job [:foo :bar] [:foo :bar :baz]) => ..started..)))
-
-(fact "job-status should return the status of a job"
-  (let [ds (fsd {:running-jobs {:foo ..foo-future..}})]
-    (job-status ds :foo) => ..foo-status..
-    (provided
-      (util/future-status ..foo-future..) => ..foo-status..)))
-
-(fact "stop-job should stop a job"
-  (let [ds (fsd)
-        rj (:running-jobs* ds)]
-    (stop-job ds :foo) => ..stopped..
-    (provided
-      (#'enj/stop-or-noop ds rj :foo) => ..stopped..)))
-
-(fact "stop-jobs should stop some jobs"
-  (let [ds (fsd {:jobs {:foo ..foo-job.. :bar ..bar-job.. :baz ..baz-job..}})]
-    (stop-jobs ds [:foo :bar]) => ..stopped..
-    (provided
-      (#'enj/map-over-ids ds stop-job [:foo :bar] [:foo :bar :baz]) => ..stopped..)))
-
-(fact "start-service should start a service"
-  (let [ds (fsd)
-        rj (:running-services* ds)]
-    (start-service ds :foo) => ..started..
-    (provided
-      (#'enj/start-or-noop ds rj ..services.. :foo) => ..started..)))
-
-(fact "start-services should start some services"
-  (let [ds (fsd {:services {:foo ..foo-job.. :bar ..bar-job.. :baz ..baz-job..}})]
-    (start-services ds [:foo :bar]) => ..started..
-    (provided
-      (#'enj/map-over-ids ds start-service [:foo :bar] [:foo :bar :baz]) => ..started..)))
-
-(fact "service-status should return the status of a service"
-  (let [ds (fsd {:running-services {:foo ..foo-future..}})]
-    (service-status ds :foo) => ..foo-status..
-    (provided
-      (util/future-status ..foo-future..) => ..foo-status..)))
-
-(fact "stop-service should stop a service"
-  (let [ds (fsd)
-        rs (:running-services* ds)]
-    (stop-service ds :foo) => ..stopped..
-    (provided
-      (#'enj/stop-or-noop ds rs :foo) => ..stopped..)))
-
-(fact "stop-services should stop some services"
-  (let [ds (fsd {:services {:foo ..foo-job.. :bar ..bar-job.. :baz ..baz-job..}})]
-    (stop-services ds [:foo :bar]) => ..stopped..
-    (provided
-      (#'enj/map-over-ids ds stop-service [:foo :bar] [:foo :bar :baz]) => ..stopped..)))
 
 (fact "create-webservice should create some compojure routes"
   (let [ds (fsd {:webservices {:foo (fn [enjin] enjin =not=> nil ..webservice..)}})]
@@ -215,9 +139,7 @@
 (fact "create-enjin should create a enjin from the supplied requirement-resolutions"
   (let [m (enjm/create-enjin-model :foo)
 
-        pmodel {:jobs {:j-a ..job-a.. :j-b ..job-b..}
-                :services {:serv-a ..serv-a.. :serv-b ..serv-b..}
-                :webservices {:ws-a ..ws-a.. :ws-b ..ws-b..}}]
+        pmodel {:webservices {:ws-a ..ws-a.. :ws-b ..ws-b..}}]
 
     (create-enjin m
                   :params {:param-a ..param-a.. :param-b ..param-b..}
@@ -231,6 +153,4 @@
                                   :params {:param-a ..param-a.. :param-b ..param-b..}
                                   :connectors {:conn-a ..conn-a.. :conn-b ..conn-b..}
                                   :enjin-deps {:ds-a ..ds-a.. :ds-b ..ds-b..}
-                                  :jobs {:j-a ..job-a.. :j-b ..job-b..}
-                                  :services {:serv-a ..serv-a.. :serv-b ..serv-b..}
                                   :webservices {:ws-a ..ws-a.. :ws-b ..ws-b..}) => ..ds..)))

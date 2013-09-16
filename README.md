@@ -32,7 +32,6 @@ For each Enjin specification
    application parameter, which can be set dynamically. All references (from any Enjin in the same application) to the same application parameter refer to the
    same value, so Enjins can be declared to share dynamic parameters
 * `:enjin-deps` specifies how the Enjin dependency requirements are to be satisfied from the application's `:enjins`
-* `:services` specifies :none, :all, or a list of service-ids for Enjin services to be run on application start
 * `:webservices` specifies :none, :all or a list of webservice-ids for Enjin webservices to be mounted on the application `:web :connector` on application start
 
         (require '[parenjin.application :as app])
@@ -41,7 +40,6 @@ For each Enjin specification
                        :enjins {:twitter {:model :my-project.enjins.twitter/model
                                           :connectors {:postgresql :postgresql} ;; maps a connector from the registry to the Enjin id
                                           :params {:prefix #app/param :app-prefix} ;; references the application param :app-prefix
-                                          :services :none            ;; don't run any of the Enjin's services
                                           :webservices :all}         ;; mount all of the Enjin's webservices
 
                                 :foos {:model m
@@ -49,7 +47,6 @@ For each Enjin specification
                                        :params {:prefix #app/param :app-prefix  ;; references the application param :app-prefix
                                                 :bar "myproject"}               ;; provides a literal value
                                        :enjin-deps {:twitter :twitter} ;; maps the :twitter Enjin above to the Enjin's :twitter dependency
-                                       :services :all                    ;; run all of the Enjin's services
                                        :webservices [:show-foos]}}       ;; mount just one of the Enjin's webservices
                        :web {:connector :web                      ;; specify the web connector Clomponent
                              :some-param :blah                    ;; additional params given to clomponent/create
@@ -76,8 +73,6 @@ An EnjinModel defines :
 * the parameters an Enjin requires
 * the connectors an Enjin requires
 * the dependent Enjins an Enjin requires
-* the jobs : functions of a single (Enjin) parameter
-* the services : functions of a single (Enjin) parameter
 * the webservices : functions of a single (Enjin) parameter which return Compojure routes
 
 A DSL is provided to create EnjinModels
@@ -92,9 +87,6 @@ A DSL is provided to create EnjinModels
         (enjm/requires-param :bar String)
         (enjm/requires-connector :postgresql javax.sql.DataSource)
         (enjm/requires-enjin :twitter :twitter-datasource)
-
-        (enjm/defjob :process-new-foos (fn [enjin] "do some stuff"))
-        (enjm/defservice :retrieve-new-foos (fn [enjin] (->> #(Thread/sleep 1000) repeat (map #(apply % [])) dorun)))
 
         (enjm/defwebservice :show-foos (fn [enjin] (routes (GET (str (enj/param enjin :bar) "/:foo-id" [foo-id] {:foo-id foo-id}))))))
 

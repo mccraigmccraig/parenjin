@@ -91,32 +91,6 @@
   (enjin-dep [this id]
     "get a enjin-dep by id")
 
-  (jobs [this]
-    "the jobs defined on the Enjin")
-  (start-job [this job-id]
-    "start the job with id <job-id>")
-  (start-jobs [this job-ids]
-    "start jobs with ids <job-ids>, which may be a list of ids or :all")
-  (job-status [this job-id]
-    "fetch the status of job with id <job-id>")
-  (stop-job [this job-id]
-    "stop the job with id <job-id>")
-  (stop-jobs [this job-ids]
-    "stop jobs with ids <job-ids>, which may be a list of ids or :all")
-
-  (services [this]
-    "the services defined on the Enjin")
-  (start-service [this service-id]
-    "start the service with id <service-id>")
-  (start-services [this service-ids]
-    "start services with ids <service-ids> which may be a list of ids or :all")
-  (service-status [this service-id]
-    "fetch the status of service with id <service-id>")
-  (stop-service [this service-id]
-    "stop the service with id <service-id>")
-  (stop-services [this service-ids]
-    "stop services with ids <service-ids> which may be a list of ids or :all")
-
   (webservices [this]
     "the webservices defined on the Enjin")
   (create-webservice [this webservice-id]
@@ -150,7 +124,7 @@
     (with-enjin enjin
       (apply handler params))))
 
-(defrecord-openly simple-enjin [model* application-promise* params* connectors* enjin-deps* jobs* services* webservices* running-jobs* running-services*]
+(defrecord-openly simple-enjin [model* application-promise* params* connectors* enjin-deps* webservices*]
   Enjin
   (model [this] model*)
 
@@ -174,26 +148,12 @@
         (throw (RuntimeException. (<< "enjin ~{id} is of type ~{ds-type} but is required to be of type ~{req-type}"))))
       ds))
 
-  (jobs [this] jobs*)
-  (start-job [this job-id] (start-or-noop this running-jobs* jobs* job-id))
-  (start-jobs [this job-ids] (map-over-ids this start-job job-ids (keys jobs*)))
-  (job-status [this job-id] (util/future-status (@running-jobs* job-id)))
-  (stop-job [this job-id] (stop-or-noop this running-jobs* job-id))
-  (stop-jobs [this job-ids] (map-over-ids this stop-job job-ids (keys jobs*)))
-
-  (services [this] services*)
-  (start-service [this service-id] (start-or-noop this running-services* services* service-id))
-  (start-services [this service-ids] (map-over-ids this start-service service-ids (keys services*)))
-  (service-status [this service-id] (util/future-status (@running-services* service-id)))
-  (stop-service [this service-id] (stop-or-noop this running-services* service-id))
-  (stop-services [this service-ids] (map-over-ids this stop-service service-ids (keys services*)))
-
   (webservices [this] webservices*)
   (create-webservice [this webservice-id] ((webservices* webservice-id) this))
   (create-webservices [this webservice-ids] (map-over-ids this create-webservice webservice-ids (keys webservices*))))
 
 (defn- create-simple-enjin*
-  [& {:keys [model params connectors enjin-deps jobs services webservices]}]
+  [& {:keys [model params connectors enjin-deps webservices]}]
   (if-not model
     (throw (RuntimeException. "model required")))
 
@@ -201,8 +161,6 @@
                       :params params
                       :connectors connectors
                       :enjin-deps enjin-deps
-                      :jobs jobs
-                      :services services
                       :webservices webservices)
 
   (map->simple-enjin {:model* model
@@ -210,11 +168,7 @@
                       :params* (or params {})
                       :connectors* (or connectors {})
                       :enjin-deps* (or enjin-deps {})
-                      :jobs* (or jobs {})
-                      :services* (or services {})
-                      :webservices* (or webservices {})
-                      :running-jobs* (ref {})
-                      :running-services* (ref {})}))
+                      :webservices* (or webservices {})}))
 
 (def ^:private create-enjin-arg-specs
   {:params true
@@ -227,16 +181,12 @@
   (util/check-map create-enjin-arg-specs args)
 
   (let [pmodel (enjm/persist-model model)
-        jobs (:jobs pmodel)
-        services (:services pmodel)
         webservices (:webservices pmodel)]
 
     (create-simple-enjin* :model pmodel
                           :params params
                           :connectors connectors
                           :enjin-deps enjin-deps
-                          :jobs jobs
-                          :services services
                           :webservices webservices)))
 
 ;; limit the depth to which a enjin will print, avoiding
