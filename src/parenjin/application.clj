@@ -17,20 +17,14 @@
     - connectors
     - enjins, created from enjin-models by supplying enjin-model requirements
     - a specification, which supplies enjin-model requirements and dependencies, and defines
-      which of an enjins webservices are to be started/stopped with the enjin
-
-   they can be stopped and started, which stops and starts specified services of the enjins"
+      which of an enjins webservices are to be created with the enjin's create-webservice"
 
   (app-spec [this])
-
-  (web-connector [this])
-  (create-web-routes [this])
 
   (enjins [this])
   (enjin [this id])
 
-  (start* [this proxy])
-  (stop [this]))
+  (create-webservice [this]))
 
 (defn- create-web-routes*
   "given an app-spec and a bunch of enjins, create a set of compojure routes for the webservices
@@ -48,20 +42,10 @@
 
   (app-spec [this] app-spec*)
 
-  (web-connector [this] web-connector*)
-  (create-web-routes [this] (create-web-routes* app-spec* enjins*))
-
   (enjins [this] enjins*)
   (enjin [this id] (enjins* id))
 
-  (start* [this proxy]
-    (clomp/destroy (web-connector this))
-    (clomp/create (web-connector this) (merge (app-spec* :web) {:app (or proxy this)}))
-    true)
-
-  (stop [this]
-    (clomp/destroy (web-connector this))
-    true))
+  (create-webservice [this] (create-web-routes* app-spec* enjins*)))
 
 (defn- fixup-params
   "replace any params which are ApplicationParamRefs with resolvers for the param"
@@ -117,9 +101,7 @@
   [app-spec]
   (let [connector-registry (util/resolve-obj (:connectors app-spec))
         enjins (create-enjins connector-registry app-spec)
-        web-connector (get connector-registry (get-in app-spec [:web :connector]))
         application (map->application {:app-spec* app-spec
-                                       :web-connector* web-connector
                                        :enjins* enjins})]
     ;; deliver the application to all it's enjins, and to any ApplicationParamResolvers
     (->> enjins
@@ -130,27 +112,22 @@
 
     application))
 
-(import-vars [parenjin.application-proxy create start destroy])
+(import-vars [parenjin.application-proxy create destroy])
 
 (defrecord-openly application-proxy [app-spec* app*]
   Application
 
   (app-spec [this] app-spec*)
 
-  (web-connector [this] (create this) (web-connector @app*))
-  (create-web-routes [this] (create this) (create-web-routes @app*))
-
   (enjins [this] (create this) (enjins @app*))
   (enjin [this id] (create this) (enjin @app* id))
 
-  (start* [this _] (create this) (start* @app* this))
-  (stop [this] (create this) (stop @app*))
+  (create-webservice [this] (create this) (create-webservice @app*))
 
   ApplicationProxy
 
   (create [this] (if-not @app* (swap! app* (fn [_] (create-application* app-spec*)))) this)
-  (start [this] (create this) (start* @app* this) this)
-  (destroy [this] (when @app* (stop this) (swap! app* (fn [_]))) this))
+  (destroy [this] (when @app* (swap! app* (fn [_]))) this))
 
 (defn create-application
   "create an ApplicationProxy which can create and destroy the same application

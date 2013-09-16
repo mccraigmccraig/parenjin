@@ -85,76 +85,23 @@
       (enj/create-webservices foomsA [:foo :bar]) => [..fooms-a-route-1.. ..fooms-a-route-2..]
       (enj/create-webservices foomsB :all) => [..fooms-b-route-1.. ..fooms-b-route-2..])))
 
-(with-state-changes [(around :facts (let [spec {:connectors {:aconn ..aconn.. :bconn ..bconn.. :webconn ..web-connector..}
+(with-state-changes [(around :facts (let [spec {:connectors {:aconn ..aconn.. :bconn ..bconn..}
                                                 :enjins {:foomsA {:model n
                                                                   :params {:tag "foomsA"}
                                                                   :webservices [:foo :bar]}
                                                          :foomsB {:model n
                                                                   :params {:tag "foomsB"}
-                                                                  :webservices [:bar :baz]}}
-                                                :web {:connector :webconn}}
+                                                                  :webservices [:bar :baz]}}}
                                           conn (:connectors spec)
                                           enjs (#'app/create-enjins {} spec)]
 
                                       ?form))]
   (fact "create-application* should create an application from a specification"
     (app-spec (#'app/create-application* spec)) => spec
-    (web-connector (#'app/create-application* spec)) => ..web-connector..
     (enjins (#'app/create-application* spec)) => enjs
 
     (provided
       (#'app/create-enjins conn spec) => enjs)))
-
-(with-state-changes [(around :facts (let [model (-> (enjm/create-enjin-model :fooms)
-                                                    (enjm/requires-param :tag String))
-
-                                          spec {:connectors {:aconn ..aconn.. :bconn ..bconn.. :webconn ..webconn..}
-                                                :enjins {:foomsA {:model model
-                                                                    :params {:tag "foomsA"}
-                                                                    :webservices [:foo :bar]}
-                                                           :foomsB {:model model
-                                                                    :params {:tag "foomsB"}
-                                                                    :webservices [:bar :baz]}}
-                                                :web {:connector :webconn}}
-                                          conn (:connectors spec)
-                                          ds (#'app/create-enjins conn spec)
-                                          foomsA (:foomsA ds)
-                                          foomsB (:foomsB ds)]
-                                      ?form))]
-  (fact "start* should start services, and mount webservices from contained enjins"
-    (-> (#'app/create-application* spec)
-        (start* ..proxy..)) => true?
-
-    (provided
-      (#'app/create-enjins conn spec) => ds
-
-      (clomp/destroy ..webconn..) => true
-      (clomp/create ..webconn.. {:connector :webconn :app ..proxy..}) => true)))
-
-(with-state-changes [(around :facts (let [model (-> (enjm/create-enjin-model :fooms)
-                                                    (enjm/requires-param :tag String))
-
-                                          spec {:connectors {:aconn ..aconn.. :bconn ..bconn.. :webconn ..web-connector..}
-                                                :enjins {:foomsA {:model model
-                                                                    :params {:tag "foomsA"}
-                                                                    :webservices [:foo :bar]}
-                                                           :foomsB {:model model
-                                                                    :params {:tag "foomsB"}
-                                                                    :webservices [:bar :baz]}}
-                                                :web {:connector :webconn}}
-                                          conn (:connectors spec)
-                                          ds (#'app/create-enjins conn spec)
-                                          foomsA (:foomsA ds)
-                                          foomsB (:foomsB ds)]
-                                      ?form))]
-  (fact "stop should stop services, jobs, and unmount webservices from contained enjins"
-    (stop (#'app/create-application spec)) => true?
-
-    (provided
-      (#'app/create-enjins conn spec) => ds
-
-      (clomp/destroy ..web-connector..) => true)))
-
 
 (with-state-changes [(around :facts (let [app-proxy (create-application ..app-spec..)]
                                       ?form))]
