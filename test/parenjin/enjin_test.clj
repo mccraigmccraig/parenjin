@@ -23,48 +23,6 @@
       (util/check-map ..param-reqs.. ..params.. :skip-ideref? true) => true
       (util/check-map ..connector-reqs.. ..connectors.. :skip-ideref? false) => true)))
 
-(with-state-changes [(around :facts (let [trackref (ref {})
-                                             result (promise)]
-                                         ?form ))]
-  (fact "start-or-noop should start a never started task"
-    (#'enj/start-or-noop ..this.. trackref {:foo (fn [this] this => ..this.. (deliver result true) (Thread/sleep 100))} :foo) => :running
-    @result => true))
-
-(with-state-changes [(around :facts (let [trackref (ref {:foo (future (Thread/sleep 100) ..result..)})
-                                             result (promise)]
-                                         ?form ))]
-  (fact "start-or-noop should do nothing to a running task"
-    (#'enj/start-or-noop ..this.. trackref {:foo (fn [this] this => ..this.. (deliver result true) (Thread/sleep 100))} :foo) => :running
-    (deref result 100 ..nocall..) => ..nocall..))
-
-(with-state-changes [(around :facts (let [b (promise)
-                                             trackref (ref {:foo (future (deliver b true) ..before-result..)})
-                                             a (promise)]
-                                         ?form ))]
-  (fact "start-or-noop should start a stopped task"
-    @b => true
-    (#'enj/start-or-noop ..this.. trackref {:foo (fn [this] this => ..this.. (deliver a ..running..) (Thread/sleep 100) ..after-result..)} :foo) => :running
-    @a => ..running..
-    (-> trackref deref :foo deref) => ..after-result..))
-
-(with-state-changes [(around :facts (let [trackref (ref {})]
-                                         ?form ))]
-  (fact "stop-or-noop should do nothing to a never started task"
-    (#'enj/stop-or-noop ..this.. trackref :foo) => :none
-    (-> trackref deref :foo) => nil))
-
-(with-state-changes [(around :facts (let [trackref (ref {:foo (future (Thread/sleep 100) ..result..)})]
-                                         ?form ))]
-  (fact "stop-or-noop should stop a running task"
-    (#'enj/stop-or-noop ..this.. trackref :foo) => :stopped
-    (-> trackref deref :foo deref) => (throws CancellationException)))
-
-(with-state-changes [(around :facts (let [trackref (ref {:foo (future ..result..)})]
-                                         ?form ))]
-  (fact "stop-or-noop should do nothing to a stopped task"
-    (-> trackref deref :foo deref) => ..result..
-    (#'enj/stop-or-noop ..this.. trackref :foo) => :stopped))
-
 (fact "choose-ids should choose ids"
   (#'enj/choose-ids :all ..all-ids..) => ..all-ids..
   (#'enj/choose-ids :none ..all-ids..) => []

@@ -31,25 +31,6 @@
                        (util/check-map (req-field model) prov :skip-ideref? skip-ideref?)))
                 true)))
 
-(defn- start-or-noop
-  "if it's not running call (defs id) in a future and retain the future in <trackref>"
-  [this trackref defs id]
-  (dosync
-   (let [f ((ensure trackref) id)]
-     (if (or (not f) (realized? f))
-       (ref-set trackref
-                (assoc @trackref id
-                       (future ((defs id) this)))))))
-  (util/future-status (@trackref id)))
-
-(defn- stop-or-noop
-  "if it is running, stop the future in (@trackref id)"
-  [this trackref id]
-  (dosync
-   (if-let [f ((ensure trackref) id)]
-     (future-cancel f)))
-  (util/future-status (@trackref id)))
-
 (defn- choose-ids
   "choose ids, which may be a list of ids, :all or :none"
   [ids-spec all-ids]

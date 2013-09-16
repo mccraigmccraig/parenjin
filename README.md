@@ -17,7 +17,7 @@ An Application consists of :
 * a specification : a clojure datastructure defining how to construct the Application
 * some Enjins : the Applications's Enjins and their dependencies are resolved in the specification. circular dependencies are permitted
 
-The application specification is a clojure datastructure which defines how the Application is to get it's web-connector and construct it's Enjins
+The application specification is a clojure datastructure which defines how the Application is to construct and connect it's Enjins, and which webservices from which Enjin's are to be exposed
 
 * `:connectors` is a map of connector objects, which may be referenced by Enjins
 * `:enjins` is a map of Enjin specifications
@@ -30,7 +30,7 @@ For each Enjin specification
    application parameter, which can be set dynamically. All references (from any Enjin in the same application) to the same application parameter refer to the
    same value, so Enjins can be declared to share dynamic parameters
 * `:enjin-deps` specifies how the Enjin dependency requirements are to be satisfied from the application's `:enjins`
-* `:webservices` specifies :none, :all or a list of webservice-ids for Enjin webservices to be mounted on the application `:web :connector` on application start
+* `:webservices` specifies :none, :all or a list of webservice-ids for Enjin webservices to be included in the application webservice from create-webservice
 
         (require '[parenjin.application :as app])
 
