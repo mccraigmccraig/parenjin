@@ -15,14 +15,12 @@ This helps with :
 An Application consists of :
 
 * a specification : a clojure datastructure defining how to construct the Application
-* a web-connector : a Clomponent with a :routes config parameter which exposes all the specified Enjin webservices (TODO: find a better solution for mounting/unmounting Compojure services)
 * some Enjins : the Applications's Enjins and their dependencies are resolved in the specification. circular dependencies are permitted
 
 The application specification is a clojure datastructure which defines how the Application is to get it's web-connector and construct it's Enjins
 
 * `:connectors` is a map of connector objects, which may be referenced by Enjins
 * `:enjins` is a map of Enjin specifications
-* `:web` specifies a web-connector, which must be present in the `:connectors` map
 
 For each Enjin specification
 
@@ -48,15 +46,13 @@ For each Enjin specification
                                                 :bar "myproject"}               ;; provides a literal value
                                        :enjin-deps {:twitter :twitter} ;; maps the :twitter Enjin above to the Enjin's :twitter dependency
                                        :webservices [:show-foos]}}       ;; mount just one of the Enjin's webservices
-                       :web {:connector :web                      ;; specify the web connector Clomponent
-                             :some-param :blah                    ;; additional params given to clomponent/create
-                          ;; :routes <routes-from-enjins>       ;; along with routes gotten from enjins
-                            }})
+                               })
 
         (def app (app/create-application app-spec))
 
-        (app/start app) ;; mount specified webservices, start specified services for each enjin
-        (app/stop app)  ;; unmount webservices, stop all jobs and services for each enjin
+
+        (def routes (app/create-webservice app true)) ;; create a dev-mode route which will recreate the app and all it's
+                                                      ;; routes on every request
 
         (def twitter (app/enjin app :twitter))
         (def foos (app/enjin app :foos))
@@ -96,7 +92,7 @@ A DSL is provided to create EnjinModels
 
 Include the clojars dependency
 
-    (parenjin "0.1.0-SNAPSHOT")
+    (parenjin "0.3.0-SNAPSHOT")
 
 ## License
 
