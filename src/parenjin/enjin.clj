@@ -15,13 +15,11 @@
    :params true
    :connectors true
    :enjin-deps true
-   :jobs true
-   :services true
    :webservices true})
 
 (defn- check-requirements
   "check that the requirements declared in the enjins model are met"
-  [& {:keys [model params connectors enjin-deps jobs services webservices] :as args}]
+  [& {:keys [model params connectors enjin-deps webservices] :as args}]
 
   (util/check-map check-requirements-arg-specs args)
 
@@ -67,10 +65,8 @@
        doall))
 
 (defprotocol Enjin
-  "Enjin : an enjin with a particular schema, which has a bunch of
-   long-running batch jobs which may be run for it
-   a bunch of non-terminating services to be run on it and a bunch of web-services
-   which may be run on it"
+  "Enjin : an enjin with a particular schema, which has a bunch of connectors, a bunch
+   of enjin dependcies, and a bunch of webservices"
 
   (model [this]
     "the EnjinModel from which this Enjin was created")

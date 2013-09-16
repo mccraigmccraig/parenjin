@@ -17,7 +17,7 @@
     - connectors
     - enjins, created from enjin-models by supplying enjin-model requirements
     - a specification, which supplies enjin-model requirements and dependencies, and defines
-      which of a enjins services are to be started/stopped with the enjin
+      which of an enjins webservices are to be started/stopped with the enjin
 
    they can be stopped and started, which stops and starts specified services of the enjins"
 
