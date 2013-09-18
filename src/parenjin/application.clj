@@ -6,8 +6,8 @@
             [parenjin.enjin :as enj]
             [parenjin.enjin-model :as dsm]
             [parenjin.application-proxy :as aproxy]
-            [parenjin.application-param :as aparam])
-  (:import [parenjin.application_param ApplicationParamRef ApplicationParamResolver]
+            [parenjin.application-ref :as aref])
+  (:import [parenjin.application_ref ApplicationRef ApplicationRefResolver]
            [parenjin.application_proxy ApplicationProxy]))
 
 (defprotocol Application
@@ -47,12 +47,12 @@
   (create-web-routes [this] (create-web-routes* app-spec* enjins*)))
 
 (defn- fixup-params
-  "replace any params which are ApplicationParamRefs with resolvers for the param"
+  "replace any params which are ApplicationRefs with resolvers for the param"
   [params]
   (->> params
        (map (fn [[k v]]
-              (if (instance? ApplicationParamRef v)
-                [k (aparam/param-resolver v)]
+              (if (instance? ApplicationRef v)
+                [k (aref/ref-resolver v)]
                 [k v])))
        (into {})))
 
@@ -91,8 +91,8 @@
   [app params]
   (->> params
        (map (fn [[k v]]
-              (if (instance? ApplicationParamResolver v)
-                (aparam/set-application v app))))
+              (if (instance? ApplicationRefResolver v)
+                (aref/set-application v app))))
        dorun))
 
 (defn- create-application*

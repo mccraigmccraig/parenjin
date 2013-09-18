@@ -7,7 +7,7 @@
             [compojure.core :as compojure]
             [parenjin.util :as util]
             [parenjin.enjin-model :as enjm]
-            [parenjin.enjin-ref-param :as enjrp])
+            parenjin.enjin-ref-param)
   (:import [parenjin.enjin_model EnjinModel]))
 
 (def ^:private check-requirements-arg-specs

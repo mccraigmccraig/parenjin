@@ -1,25 +1,25 @@
 (ns parenjin.enjin-ref-param
   (:use clojure.core.strint
         midje.open-protocols)
-  (:require [parenjin.application-param :as aparam])
-  (:import [parenjin.application_param ApplicationParamResolver]))
+  (:require [parenjin.application-ref :as aref])
+  (:import [parenjin.application_ref ApplicationRefResolver]))
 
-(defn- app-params
-  "convert the enjin param bindings to app param bindings by following the ApplicationParamResolver
+(defn- app-refs
+  "convert the enjin param bindings to app ref bindings by following the ApplicationParamResolver
    references"
   [enjin params]
   (->> params
        (map (fn [[k v]]
               (let [resolver (get-in enjin [:params* k])]
-                (if-not (instance? ApplicationParamResolver resolver)
+                (if-not (instance? ApplicationRefResolver resolver)
                   (throw (RuntimeException. (<< "param: <~{k}> is not an app/param reference"))))
-                [(aparam/get-param-ref resolver) v])))
+                [(aref/get-ref-name resolver) v])))
        (into {})))
 
 (defn with-params*
   "call function f after binding reference params for the enjin"
   [enjin params f]
-  (aparam/with-params* (deref (:application-promise* enjin)) (app-params enjin params) f))
+  (aref/with-app-refs* (deref (:application-promise* enjin)) (app-refs enjin params) f))
 
 (defmacro with-params
   "wrap forms in a lambda after binding reference params for the enjin"
