@@ -108,7 +108,7 @@
 
     application))
 
-(import-vars [parenjin.application-proxy destroy create-webservice])
+(import-vars [parenjin.application-proxy create destroy create-webservice])
 
 (defn- create-webservice*
   "create a compojure route for the application.
@@ -121,33 +121,26 @@
       (compojure/routing (create-web-routes app)))
     (apply compojure/routes (create-web-routes app))))
 
-(defn- create*
-  "create an app if it hasn't already been created. returns the app"
-  [app-proxy]
-  (let [connectors (:connectors* app-proxy)
-        app-spec (:app-spec* app-proxy)
-        app-atom (:app* app-proxy)]
-    (swap! app-atom
-           (fn [old-app] (if-not old-app
-                          (create-application* connectors app-spec)
-                          old-app)))))
-
 (defrecord-openly application-proxy [connectors* app-spec* app*]
   Application
 
   (app-spec [this] app-spec*)
 
-  (enjins [this] (enjins (create* this)))
-  (enjin [this id] (enjin (create* this) id))
+  (enjins [this] (enjins (create this)))
+  (enjin [this id] (enjin (create this) id))
 
-  (create-web-routes [this] (create-web-routes (create* this)))
+  (create-web-routes [this] (create-web-routes (create this)))
 
   ApplicationProxy
 
+  (create [this] (swap! app*
+                        (fn [old-app] (if-not old-app
+                                       (create-application* connectors* app-spec*)
+                                       old-app))))
   (destroy [this] (swap! app* (fn [_])) this)
 
   (create-webservice [this] (create-webservice this false))
-  (create-webservice [this devmode] (create-webservice* (create* this) devmode))
+  (create-webservice [this devmode] (create-webservice* (create this) devmode))
   )
 
 (defn create-application

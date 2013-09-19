@@ -156,7 +156,7 @@
                                       ?form))]
 (fact "create* should create an application if necessary"
 
-  (#'app/create* app-proxy) => ..app..
+  (#'app/create app-proxy) => ..app..
   (provided
     (#'app/create-application* ..connectors.. ..app-spec..) => ..app..)))
 
@@ -165,7 +165,7 @@
                                                                                  :app* (atom ..app..)})]
                                       ?form))]
   (fact "create* should return an existing application"
-    (#'app/create* app-proxy) => ..app..))
+    (#'app/create app-proxy) => ..app..))
 
 (fact "create-webservice* should create a production-mode webservice"
   (#'app/create-webservice* ..app.. false) => ..webservice..
