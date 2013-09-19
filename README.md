@@ -19,7 +19,6 @@ An Application consists of :
 
 The application specification is a clojure datastructure which defines how the Application is to construct and connect it's Enjins, and which webservices from which Enjin's are to be exposed
 
-* `:connectors` is a map of connector objects, which may be referenced by Enjins
 * `:enjins` is a map of Enjin specifications
 
 For each Enjin specification
@@ -35,8 +34,7 @@ For each Enjin specification
 
         (require '[parenjin.application :as app])
 
-        (def app-spec {:connectors :my-project.connectors.registry ;; a map of connector objects by id
-                       :enjins {:twitter {:model :my-project.enjins.twitter/model
+        (def app-spec {:enjins {:twitter {:model :my-project.enjins.twitter/model
                                           :connectors {:postgresql :postgresql} ;; maps a connector from the registry to the Enjin id
                                           :params {:prefix #app/param :app-prefix} ;; references the application param :app-prefix
                                           :webservices :all}         ;; mount all of the Enjin's webservices
@@ -49,7 +47,7 @@ For each Enjin specification
                                        :webservices [:show-foos]}}       ;; mount just one of the Enjin's webservices
                                })
 
-        (def app (app/create-application app-spec))
+        (def app (app/create-application connectors app-spec))
 
 
         (def routes (app/create-webservice app true)) ;; create a dev-mode route which will recreate the app and all it's
