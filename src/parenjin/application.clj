@@ -70,7 +70,7 @@
   [connector-registry app-promise enjin-delay-registry-promise enjin-spec]
 
   (let [model (-> enjin-spec :model util/resolve-obj)
-        connectors (->> enjin-spec :connectors (map (fn [[conn-id reg-id]] [conn-id (connector-registry reg-id)])) (into {}))
+        connectors (->> enjin-spec :connectors (map (fn [[conn-id reg-id]] [conn-id (get connector-registry reg-id)])) (into {}))
 ]
     (enj/create-enjin model
                       :application-promise app-promise
