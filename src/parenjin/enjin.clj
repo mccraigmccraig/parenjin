@@ -119,10 +119,10 @@
   (enjin-deps [this] enjin-deps*)
   (enjin-dep [this id]
     (let [req-type (get-in model* [:enjin-reqs id])
-          ds (util/deref-if-pending (enjin-deps* id))
+          ds (util/deref-if-deref (enjin-deps* id))
           ds-type (get-in ds [:model* :model-type])]
       (if-not (= req-type ds-type)
-        (throw (RuntimeException. (<< "enjin ~{id} is of type ~{ds-type} but is required to be of type ~{req-type}"))))
+        (throw (RuntimeException. (<< "enjin <~{id}> is of type <~{ds-type}> but is required to be of type <~{req-type}>"))))
       ds))
 
   (webservices [this] webservices*)
@@ -130,7 +130,7 @@
   (create-webservices [this webservice-ids] (map-over-ids this create-webservice webservice-ids (keys webservices*))))
 
 (defn- create-simple-enjin*
-  [& {:keys [model params connectors enjin-deps webservices]}]
+  [& {:keys [model application-promise params connectors enjin-deps webservices]}]
   (if-not model
     (throw (RuntimeException. "model required")))
 
@@ -141,19 +141,20 @@
                       :webservices webservices)
 
   (map->simple-enjin {:model* model
-                      :application-promise* (promise)
+                      :application-promise* application-promise
                       :params* (or params {})
                       :connectors* (or connectors {})
                       :enjin-deps* (or enjin-deps {})
                       :webservices* (or webservices {})}))
 
 (def ^:private create-enjin-arg-specs
-  {:params true
+  {:application-promise true
+   :params true
    :connectors true
    :enjin-deps true})
 
 (defn create-enjin
-  [model & {:keys [params connectors enjin-deps] :as args}]
+  [model & {:keys [application-promise params connectors enjin-deps] :as args}]
 
   (util/check-map create-enjin-arg-specs args)
 
@@ -161,6 +162,7 @@
         webservices (:webservices pmodel)]
 
     (create-simple-enjin* :model pmodel
+                          :application-promise application-promise
                           :params params
                           :connectors connectors
                           :enjin-deps enjin-deps

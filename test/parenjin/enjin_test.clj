@@ -100,6 +100,7 @@
         pmodel {:webservices {:ws-a ..ws-a.. :ws-b ..ws-b..}}]
 
     (create-enjin m
+                  :application-promise ..promise..
                   :params {:param-a ..param-a.. :param-b ..param-b..}
                   :connectors {:conn-a ..conn-a.. :conn-b ..conn-b..}
                   :enjin-deps {:ds-a ..ds-a.. :ds-b ..ds-b..})
@@ -108,6 +109,7 @@
     (provided
       (enjm/persist-model m) => pmodel
       (#'enj/create-simple-enjin* :model pmodel
+                                  :application-promise ..promise..
                                   :params {:param-a ..param-a.. :param-b ..param-b..}
                                   :connectors {:conn-a ..conn-a.. :conn-b ..conn-b..}
                                   :enjin-deps {:ds-a ..ds-a.. :ds-b ..ds-b..}

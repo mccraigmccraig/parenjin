@@ -1,5 +1,6 @@
 (ns parenjin.application-ref
-  (:use midje.open-protocols)
+  (:use midje.open-protocols
+        clojure.core.strint)
   (:require [parenjin.application-proxy :as aproxy])
   (:import [parenjin.application_proxy ApplicationProxy]))
 
@@ -35,16 +36,18 @@
   "create a resolver which implements IDeref and whose
    deref method resolves the reference for the application
    ref - an ApplicationRef"
-  [ref]
-  (let [app-promise (promise)]
-    (reify
+  [app-promise ref]
+  (reify
       clojure.lang.IDeref
       (deref [this]
-        (resolve-ref (deref app-promise 0 nil) (ref-name ref)))
+        (let [app (clojure.core/deref app-promise 0 nil)]
+          (if-not app
+            (throw (RuntimeException. (<< "ref-resolver has not had application delivered: ~(ref-name ref)"))))
+          (resolve-ref app (ref-name ref))))
 
       ApplicationRefResolver
       (get-ref-name [this] (ref-name ref))
-      (set-application [this application] (deliver app-promise (unwrap-application application))))))
+      (set-application [this application] (deliver app-promise (unwrap-application application)))))
 
 (defn with-app-refs*
   [app refs f]

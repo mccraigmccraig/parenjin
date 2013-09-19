@@ -12,16 +12,16 @@
        (map (fn [[k v]]
               (let [resolver (get-in enjin [:params* k])]
                 (if-not (instance? ApplicationRefResolver resolver)
-                  (throw (RuntimeException. (<< "param: <~{k}> is not an app/param reference"))))
+                  (throw (RuntimeException. (<< "param: <~{k}> is not an app reference (~(type resolver))"))))
                 [(aref/get-ref-name resolver) v])))
        (into {})))
 
 (defn with-params*
-  "call function f after binding reference params for the enjin"
+  "call function f after binding app references for the enjin"
   [enjin params f]
   (aref/with-app-refs* (deref (:application-promise* enjin)) (app-refs enjin params) f))
 
 (defmacro with-params
-  "wrap forms in a lambda after binding reference params for the enjin"
+  "wrap forms in a lambda after binding app references for the enjin"
   [enjin params & forms]
   `(with-params* ~enjin ~params (fn [] ~@forms)))

@@ -13,7 +13,8 @@
 
 (fact "ref-resolver should create an ApplicationRefResolver"
   (let [param-ref #app/ref :foo
-        pr (ref-resolver param-ref)]
-    (set-application pr ..app..)
+        app-promise (promise)
+        pr (ref-resolver app-promise param-ref)]
+    (deliver app-promise ..app..)
     (with-app-refs* ..app.. {:foo ..value..} (fn [] @pr)) => ..value..
     (with-app-refs* ..app.. {:foo ..another..} (fn [] @pr)) => ..another..))
