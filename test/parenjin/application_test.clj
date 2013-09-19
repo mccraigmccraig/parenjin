@@ -120,7 +120,7 @@
                                           a (app/enjin app :A)
                                           b (app/enjin app :B)]
                                       ?form))]
-  (fact "create-application* should allow binding of params and enjin-deps as application-refs"
+  (fact "create-application* should allow binding of params as application-refs"
     (enj/with-params a {:tag "foo"}
       (enj/param a :tag) => "foo"
       (enj/param b :tag) => "foo")
@@ -130,25 +130,25 @@
       (enj/param b :tag) => "foo")))
 
 (def o (-> (enjm/create-enjin-model :foos)
-           (enjm/requires-param :tag String)
+           (enjm/requires-enjin :some-bars :bars)))
+
+(def p (-> (enjm/create-enjin-model :bars)
            (enjm/requires-param :of)))
 
-;; (def app-enjin-ref-spec {:connectors {}
-;;                          :enjins {:A {:model m
-;;                                       :params {:tag #app/ref :ze-tag}
-;;                                       :enjin-deps {:other-foos #app/ref :ze-other-foos}}
-;;                                   :B {:model o
-;;                                       :params {:tag #app/ref :ze-tag
-;;                                                :of #app/ref :ze-other-foos}}}})
+(def app-enjin-ref-spec {:connectors {}
+                         :enjins {:A {:model o
+                                      :enjin-deps {:some-bars #app/ref :ze-other-bars}}
+                                  :B {:model p
+                                      :params {:of #app/ref :ze-other-bars}}}})
 
-;; (with-state-changes [(around :facts (let [app (#'app/create-application* app-param-ref-spec)
-;;                                           a (app/enjin app :A)
-;;                                           b (app/enjin app :B)]
-;;                                       ?form))]
-;;   (fact "create-application* should allow binding of params and enjin-deps as application-refs"
-;;     (enj/with-params b {:of b}
-;;       (enj/enjin-dep a :other-foos) => b)
-;;     ))
+(with-state-changes [(around :facts (let [app (#'app/create-application* app-enjin-ref-spec)
+                                          a (app/enjin app :A)
+                                          b (app/enjin app :B)]
+                                      ?form))]
+  (fact "create-application* should allow binding of enjin-deps as application-refs"
+    (enj/with-params b {:of b}
+
+      (enj/enjin-dep a :some-bars) => b)))
 
 (with-state-changes [(around :facts (let [app-proxy (create-application ..app-spec..)]
                                       ?form))]
