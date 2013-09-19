@@ -99,10 +99,9 @@
 
 (defn- create-application*
   "create an application given an application specification"
-  [app-spec]
+  [connectors app-spec]
   (let [app-promise (promise)
-        connector-registry (util/resolve-obj (:connectors app-spec))
-        enjins (create-enjins connector-registry app-promise app-spec)
+        enjins (create-enjins connectors app-promise app-spec)
         application (map->application {:app-spec* app-spec
                                        :enjins* enjins})]
     (deliver app-promise application)
@@ -124,31 +123,37 @@
 
 (defn- create*
   "create an app if it hasn't already been created. returns the app"
-  [app-spec app-atom]
-  (swap! app-atom (fn [old-app] (if-not old-app
-                                 (create-application* app-spec)
-                                 old-app))))
+  [app-proxy]
+  (let [connectors (:connectors* app-proxy)
+        app-spec (:app-spec* app-proxy)
+        app-atom (:app* app-proxy)]
+    (swap! app-atom
+           (fn [old-app] (if-not old-app
+                          (create-application* connectors app-spec)
+                          old-app)))))
 
-(defrecord-openly application-proxy [app-spec* app*]
+(defrecord-openly application-proxy [connectors* app-spec* app*]
   Application
 
   (app-spec [this] app-spec*)
 
-  (enjins [this] (enjins (create* app-spec* app*)))
-  (enjin [this id] (enjin (create* app-spec* app*) id))
+  (enjins [this] (enjins (create* this)))
+  (enjin [this id] (enjin (create* this) id))
 
-  (create-web-routes [this] (create-web-routes (create* app-spec* app*)))
+  (create-web-routes [this] (create-web-routes (create* this)))
 
   ApplicationProxy
 
   (destroy [this] (swap! app* (fn [_])) this)
 
   (create-webservice [this] (create-webservice this false))
-  (create-webservice [this devmode] (create-webservice* (create* app-spec* app*) devmode)))
+  (create-webservice [this devmode] (create-webservice* (create* this) devmode))
+  )
 
 (defn create-application
   "create an ApplicationProxy which can create and destroy the same application
    repeatedly from the specification"
-  [app-spec]
-  (map->application-proxy {:app-spec* app-spec
+  [connectors app-spec]
+  (map->application-proxy {:connectors* connectors
+                           :app-spec* app-spec
                            :app* (atom nil)}))

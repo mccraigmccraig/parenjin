@@ -4,7 +4,7 @@
 
 Parameterisable application Engines for Compojure
 
-Decompose your application into Engines, then construct Applications by declaratively wiring Engines together with configuration parameters and connectors
+Decompose your application into Enjins, then construct Applications by declaratively wiring Enjins together with configuration parameters and connectors
 
 This helps with :
 
@@ -26,10 +26,11 @@ For each Enjin specification
 
 * `:model` refers to an EnjinModel, which defines the Enjins requirements
 * `:connectors` specifies how the Enjin connector requirements are to be satisfied from the application's `:connectors` map
-* `:params` provides values to satisfy the Enjin param requirements. the #app/param reader-macro can be used to create a reference to an
-   application parameter, which can be set dynamically. All references (from any Enjin in the same application) to the same application parameter refer to the
+* `:params` provides values to satisfy the Enjin param requirements. the #app/ref reader-macro can be used to create an application reference,
+   which can be set dynamically. All references (from any Enjin in the same application) to the same application reference refer to the
    same value, so Enjins can be declared to share dynamic parameters
-* `:enjin-deps` specifies how the Enjin dependency requirements are to be satisfied from the application's `:enjins`
+* `:enjin-deps` specifies how the Enjin dependency requirements are to be satisfied from the application's `:enjins`. an Enjin dependency may be
+   set as an application reference, so one Enjin can dynamically satisfy the Enjin dependencies of another
 * `:webservices` specifies :none, :all or a list of webservice-ids for Enjin webservices to be included in the application webservice from create-webservice
 
         (require '[parenjin.application :as app])

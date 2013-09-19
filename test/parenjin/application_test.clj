@@ -90,33 +90,31 @@
       (enj/create-webservices foomsA [:foo :bar]) => [..fooms-a-route-1.. ..fooms-a-route-2..]
       (enj/create-webservices foomsB :all) => [..fooms-b-route-1.. ..fooms-b-route-2..])))
 
-(with-state-changes [(around :facts (let [spec {:connectors {:aconn ..aconn.. :bconn ..bconn..}
-                                                :enjins {:foomsA {:model n
+(with-state-changes [(around :facts (let [conn {:aconn ..aconn.. :bconn ..bconn..}
+                                          spec {:enjins {:foomsA {:model n
                                                                   :params {:tag "foomsA"}
                                                                   :webservices [:foo :bar]}
                                                          :foomsB {:model n
                                                                   :params {:tag "foomsB"}
                                                                   :webservices [:bar :baz]}}}
-                                          conn (:connectors spec)
                                           app-promise (promise)
                                           enjs (#'app/create-enjins conn app-promise spec)]
 
                                       ?form))]
   (fact "create-application* should create an application from a specification"
-    (app-spec (#'app/create-application* spec)) => spec
-    (enjins (#'app/create-application* spec)) => enjs
+    (app-spec (#'app/create-application* conn spec)) => spec
+    (enjins (#'app/create-application* conn spec)) => enjs
 
     (provided
       (#'app/create-enjins conn anything spec) => enjs)))
 
 
-(def app-param-ref-spec {:connectors {}
-                         :enjins {:A {:model n
+(def app-param-ref-spec {:enjins {:A {:model n
                                       :params {:tag #app/ref :ze-tag}}
                                   :B {:model n
                                       :params {:tag #app/ref :ze-tag}}}})
 
-(with-state-changes [(around :facts (let [app (#'app/create-application* app-param-ref-spec)
+(with-state-changes [(around :facts (let [app (#'app/create-application* {} app-param-ref-spec)
                                           a (app/enjin app :A)
                                           b (app/enjin app :B)]
                                       ?form))]
@@ -135,13 +133,12 @@
 (def p (-> (enjm/create-enjin-model :bars)
            (enjm/requires-param :of)))
 
-(def app-enjin-ref-spec {:connectors {}
-                         :enjins {:A {:model o
+(def app-enjin-ref-spec {:enjins {:A {:model o
                                       :enjin-deps {:some-bars #app/ref :ze-other-bars}}
                                   :B {:model p
                                       :params {:of #app/ref :ze-other-bars}}}})
 
-(with-state-changes [(around :facts (let [app (#'app/create-application* app-enjin-ref-spec)
+(with-state-changes [(around :facts (let [app (#'app/create-application* {} app-enjin-ref-spec)
                                           a (app/enjin app :A)
                                           b (app/enjin app :B)]
                                       ?form))]
@@ -150,19 +147,25 @@
 
       (enj/enjin-dep a :some-bars) => b)))
 
-(with-state-changes [(around :facts (let [app-proxy (create-application ..app-spec..)]
+(with-state-changes [(around :facts (let [app-proxy (create-application {} ..app-spec..)]
                                       ?form))]
   (fact "the app-spec should be stored in the proxy"
     (app-spec app-proxy) => ..app-spec..))
 
+(with-state-changes [(around :facts (let [app-proxy (create-application ..connectors.. ..app-spec..)]
+                                      ?form))]
 (fact "create* should create an application if necessary"
 
-  (#'app/create* ..app-spec.. (atom nil)) => ..app..
+  (#'app/create* app-proxy) => ..app..
   (provided
-    (#'app/create-application* ..app-spec..) => ..app..))
+    (#'app/create-application* ..connectors.. ..app-spec..) => ..app..)))
 
-(fact "create* should return an existing application"
-  (#'app/create* ..app-spec.. (atom ..app..)) => ..app..)
+(with-state-changes [(around :facts (let [app-proxy (app/map->application-proxy {:connectors* ..connectors..
+                                                                                 :app-spec* ..app-spec..
+                                                                                 :app* (atom ..app..)})]
+                                      ?form))]
+  (fact "create* should return an existing application"
+    (#'app/create* app-proxy) => ..app..))
 
 (fact "create-webservice* should create a production-mode webservice"
   (#'app/create-webservice* ..app.. false) => ..webservice..
