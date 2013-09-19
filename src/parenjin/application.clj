@@ -47,7 +47,7 @@
   (create-web-routes [this] (create-web-routes* app-spec* enjins*)))
 
 (defn- fixup-params
-  "replace any params which are ApplicationRefs with resolvers for the param"
+  "replace any params which are ApplicationRefs with resolvers"
   [app-promise params]
   (->> params
        (map (fn [[k v]]
@@ -56,23 +56,27 @@
                 [k v])))
        (into {})))
 
+(defn- fixup-enjin-deps
+  "replace any enjin-deps which are ApplicationRefs with resolvers"
+  [app-promise enjin-delay-registry-promise enjin-deps]
+  (->> enjin-deps
+       (map (fn [[dep-id enjin-id]] (if (instance? ApplicationRef enjin-id)
+                                  [dep-id (aref/ref-resolver app-promise enjin-id)]
+                                  [dep-id (@enjin-delay-registry-promise enjin-id)])))
+       (into {})))
+
 (defn- create-enjin
   "create a enjin from an application's specification"
   [connector-registry app-promise enjin-delay-registry-promise enjin-spec]
 
   (let [model (-> enjin-spec :model util/resolve-obj)
         connectors (->> enjin-spec :connectors (map (fn [[conn-id reg-id]] [conn-id (connector-registry reg-id)])) (into {}))
-        dependencies (->> enjin-spec
-                          :enjin-deps
-                          (map (fn [[dep-id ds-id]] (if (instance? ApplicationRef ds-id)
-                                                     [dep-id (aref/ref-resolver app-promise ds-id)]
-                                                     [dep-id (@enjin-delay-registry-promise ds-id)])))
-                          (into {}))]
+]
     (enj/create-enjin model
                       :application-promise app-promise
                       :params (fixup-params app-promise (:params enjin-spec))
                       :connectors connectors
-                      :enjin-deps dependencies)))
+                      :enjin-deps (fixup-enjin-deps app-promise enjin-delay-registry-promise (:enjin-deps enjin-spec)))))
 
 (defn- create-enjins
   [connector-registry app-promise app-spec]
