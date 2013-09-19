@@ -93,14 +93,6 @@
                 [key (deref enjin-delay)]))
          (into {}))))
 
-(defn- deliver-app-to-param-resolvers
-  [app params]
-  (->> params
-       (map (fn [[k v]]
-              (if (instance? ApplicationRefResolver v)
-                (aref/set-application v app))))
-       dorun))
-
 (defn- create-application*
   "create an application given an application specification"
   [app-spec]

@@ -22,9 +22,7 @@
   (get-in *application-refs* [app ref-name]))
 
 (defprotocol ApplicationRefResolver
-  (get-ref-name [this])
-  (set-application [this application]
-    "allow an application to be given to the ref resolver after it's creation"))
+  (get-ref-name [this]))
 
 (defn- unwrap-application
   [app]
@@ -46,8 +44,7 @@
           (resolve-ref app (ref-name ref))))
 
       ApplicationRefResolver
-      (get-ref-name [this] (ref-name ref))
-      (set-application [this application] (deliver app-promise (unwrap-application application)))))
+      (get-ref-name [this] (ref-name ref))))
 
 (defn with-app-refs*
   [app refs f]
