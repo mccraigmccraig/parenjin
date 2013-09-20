@@ -36,12 +36,12 @@ For each Enjin specification
 
         (def app-spec {:enjins {:twitter {:model :my-project.enjins.twitter/model
                                           :connectors {:postgresql :postgresql}    ;; maps a connector from the registry to the Enjin's id
-                                          :params {:prefix #app/param :app-prefix} ;; references the application param :app-prefix
+                                          :params {:prefix #app/ref :app-prefix} ;; references the application param :app-prefix
                                           :webservices :all}                       ;; mount all of the Enjin's webservices
 
                                 :foos {:model m
                                        :connectors {:postgresql :postgresql}
-                                       :params {:prefix #app/param :app-prefix ;; references the application param :app-prefix
+                                       :params {:prefix #app/ref :app-prefix ;; references the application param :app-prefix
                                                 :bar "myproject"}              ;; provides a literal value
                                        :enjins {:twitter :twitter}             ;; maps the :twitter Enjin above to the Enjin's :twitter dependency
                                        :webservices [:show-foos]}}             ;; mount just one of the Enjin's webservices
