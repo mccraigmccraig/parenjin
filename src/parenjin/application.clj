@@ -56,10 +56,10 @@
                 [k v])))
        (into {})))
 
-(defn- fixup-enjin-deps
-  "replace any enjin-deps which are ApplicationRefs with resolvers"
-  [app-promise enjin-delay-registry-promise enjin-deps]
-  (->> enjin-deps
+(defn- fixup-enjins
+  "replace any enjins which are ApplicationRefs with resolvers"
+  [app-promise enjin-delay-registry-promise enjins]
+  (->> enjins
        (map (fn [[dep-id enjin-id]] (if (instance? ApplicationRef enjin-id)
                                   [dep-id (aref/ref-resolver app-promise enjin-id)]
                                   [dep-id (@enjin-delay-registry-promise enjin-id)])))
@@ -76,7 +76,7 @@
                       :application-promise app-promise
                       :params (fixup-params app-promise (:params enjin-spec))
                       :connectors connectors
-                      :enjin-deps (fixup-enjin-deps app-promise enjin-delay-registry-promise (:enjin-deps enjin-spec)))))
+                      :enjins (fixup-enjins app-promise enjin-delay-registry-promise (:enjins enjin-spec)))))
 
 (defn- create-enjins
   [connector-registry app-promise app-spec]

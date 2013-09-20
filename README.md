@@ -28,23 +28,23 @@ For each Enjin specification
 * `:params` provides values to satisfy the Enjin param requirements. the #app/ref reader-macro can be used to create an application reference,
    which can be set dynamically. All references (from any Enjin in the same application) to the same application reference refer to the
    same value, so Enjins can be declared to share dynamic parameters
-* `:enjin-deps` specifies how the Enjin dependency requirements are to be satisfied from the application's `:enjins`. an Enjin dependency may be
+* `:enjins` specifies how the Enjin dependency requirements are to be satisfied from the application's `:enjins`. an Enjin dependency may be
    set as an application reference, so one Enjin can dynamically satisfy the Enjin dependencies of another
 * `:webservices` specifies :none, :all or a list of webservice-ids for Enjin webservices to be included in the application webservice from create-webservice
 
         (require '[parenjin.application :as app])
 
         (def app-spec {:enjins {:twitter {:model :my-project.enjins.twitter/model
-                                          :connectors {:postgresql :postgresql} ;; maps a connector from the registry to the Enjin id
+                                          :connectors {:postgresql :postgresql}    ;; maps a connector from the registry to the Enjin's id
                                           :params {:prefix #app/param :app-prefix} ;; references the application param :app-prefix
-                                          :webservices :all}         ;; mount all of the Enjin's webservices
+                                          :webservices :all}                       ;; mount all of the Enjin's webservices
 
                                 :foos {:model m
                                        :connectors {:postgresql :postgresql}
-                                       :params {:prefix #app/param :app-prefix  ;; references the application param :app-prefix
-                                                :bar "myproject"}               ;; provides a literal value
-                                       :enjin-deps {:twitter :twitter} ;; maps the :twitter Enjin above to the Enjin's :twitter dependency
-                                       :webservices [:show-foos]}}       ;; mount just one of the Enjin's webservices
+                                       :params {:prefix #app/param :app-prefix ;; references the application param :app-prefix
+                                                :bar "myproject"}              ;; provides a literal value
+                                       :enjins {:twitter :twitter}             ;; maps the :twitter Enjin above to the Enjin's :twitter dependency
+                                       :webservices [:show-foos]}}             ;; mount just one of the Enjin's webservices
                                })
 
         (def app (app/create-application connectors app-spec))

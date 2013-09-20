@@ -10,7 +10,7 @@
                                                 :params {:aparam 10 :anotherparam "boo"}
                                                 :connectors {:myx :x
                                                              :myy :y}
-                                                :enjin-deps {:mybars :bars
+                                                :enjins {:mybars :bars
                                                              :mybazs :bazs}}
                                           app-promise (promise)
                                           params (:params spec)
@@ -28,7 +28,7 @@
                                             :application-promise app-promise
                                             :params params
                                             :connectors {:myx ..xconn.. :myy ..yconn..}
-                                            :enjin-deps {:mybars bardsdelay :mybazs bazdsdelay}) => ..enjin..)))
+                                            :enjins {:mybars bardsdelay :mybazs bazdsdelay}) => ..enjin..)))
 
 (with-state-changes [(around :facts (let [spec {:enjins {:foos {:model ..foos-model..}
                                                          :bars {:model ..bars-model..}}}
@@ -39,14 +39,14 @@
     (-> (#'app/create-enjins ..connectors.. app-promise spec) :foos) => ..foos-enjin..
 
     (provided
-      (enj/create-enjin ..foos-model.. :application-promise app-promise :params {} :connectors {} :enjin-deps {}) => ..foos-enjin..
-      (enj/create-enjin ..bars-model.. :application-promise app-promise :params {} :connectors {} :enjin-deps {}) => ..bars-enjin..)
+      (enj/create-enjin ..foos-model.. :application-promise app-promise :params {} :connectors {} :enjins {}) => ..foos-enjin..
+      (enj/create-enjin ..bars-model.. :application-promise app-promise :params {} :connectors {} :enjins {}) => ..bars-enjin..)
 
     (-> (#'app/create-enjins ..connectors.. app-promise spec) :bars) => ..bars-enjin..
 
     (provided
-      (enj/create-enjin ..foos-model.. :application-promise app-promise :params {} :connectors {} :enjin-deps {}) => ..foos-enjin..
-      (enj/create-enjin ..bars-model.. :application-promise app-promise :params {} :connectors {} :enjin-deps {}) => ..bars-enjin..)))
+      (enj/create-enjin ..foos-model.. :application-promise app-promise :params {} :connectors {} :enjins {}) => ..foos-enjin..
+      (enj/create-enjin ..bars-model.. :application-promise app-promise :params {} :connectors {} :enjins {}) => ..bars-enjin..)))
 
 
 (def m (-> (enjm/create-enjin-model :foos)
@@ -55,10 +55,10 @@
 
 (with-state-changes [(around :facts (let [spec {:enjins {:foosA {:model m
                                                                  :params {:tag "foosA"}
-                                                                 :enjin-deps {:other-foos :foosB}}
+                                                                 :enjins {:other-foos :foosB}}
                                                          :foosB {:model m
                                                                  :params {:tag "foosB"}
-                                                                 :enjin-deps {:other-foos :foosA}}}}
+                                                                 :enjins {:other-foos :foosA}}}}
                                           app-promise (promise)
                                           enjins (#'app/create-enjins {} app-promise spec)
                                           foosA (enjins :foosA)
@@ -66,10 +66,10 @@
                                       ?form))]
   (fact "create-enjins should allow circular dependencies amongst enjins"
     (-> foosA :params* :tag) => "foosA"
-    (-> foosA :enjin-deps* :other-foos deref) => foosB
+    (-> foosA :enjins* :other-foos deref) => foosB
 
     (-> foosB :params* :tag) => "foosB"
-    (-> foosB :enjin-deps* :other-foos deref) => foosA))
+    (-> foosB :enjins* :other-foos deref) => foosA))
 
 (def n (-> (enjm/create-enjin-model :foos)
            (enjm/requires-param :tag String)))
@@ -134,7 +134,7 @@
            (enjm/requires-param :of)))
 
 (def app-enjin-ref-spec {:enjins {:A {:model o
-                                      :enjin-deps {:some-bars #app/ref :ze-other-bars}}
+                                      :enjins {:some-bars #app/ref :ze-other-bars}}
                                   :B {:model p
                                       :params {:of #app/ref :ze-other-bars}}}})
 
@@ -142,10 +142,10 @@
                                           a (app/enjin app :A)
                                           b (app/enjin app :B)]
                                       ?form))]
-  (fact "create-application* should allow binding of enjin-deps as application-refs"
+  (fact "create-application* should allow binding of enjins as application-refs"
     (enj/with-params b {:of b}
 
-      (enj/enjin-dep a :some-bars) => b)))
+      (enj/enjin a :some-bars) => b)))
 
 (with-state-changes [(around :facts (let [app-proxy (create-application {} ..app-spec..)]
                                       ?form))]

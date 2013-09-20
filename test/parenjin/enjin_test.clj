@@ -13,7 +13,7 @@
                       :connector-reqs ..connector-reqs..}
               :params ..params..
               :connectors ..connectors..
-              :enjin-deps ..enjin-deps..
+              :enjins ..enjins..
               :webservices ..webservices..}]
 
     (apply #'enj/check-requirements (apply concat args)) => true
@@ -40,27 +40,27 @@
   (model (#'enj/create-simple-enjin* :model {:model-type ..type..})) => {:model-type ..type..})
 
 ;; otherwise compiler borks, 'cos metaconstants are only auto-declared inside midje macros
-(declare ..model.. ..params.. ..connectors.. ..enjin-deps.. ..jobs.. ..services.. ..webservices..)
+(declare ..model.. ..params.. ..connectors.. ..enjins.. ..jobs.. ..services.. ..webservices..)
 
 (defn csd
   [& [overrides]]
   (#'enj/create-simple-enjin* :model (or (:model overrides) ..model..)
                               :params (or (:params overrides) ..params..)
                               :connectors (or (:connectors overrides) ..connectors..)
-                              :enjin-deps (or (:enjin-deps overrides) ..enjin-deps..)
+                              :enjins (or (:enjins overrides) ..enjins..)
                               :webservices (or (:webservices overrides) ..webservices..)))
 
 (fact
   (model (csd)) => ..model..
   (params (csd)) => ..params..
   (connectors (csd)) => ..connectors..
-  (enjin-deps (csd)) => ..enjin-deps..
+  (enjins (csd)) => ..enjins..
   (webservices (csd)) => ..webservices..
   (provided
     (#'enj/check-requirements :model ..model..
                              :params ..params..
                              :connectors ..connectors..
-                             :enjin-deps ..enjin-deps..
+                             :enjins ..enjins..
                              :webservices ..webservices..) => true))
 
 (fact "enjin with an IDeref parameter should check parameter type when param method retrieves param"
@@ -78,12 +78,12 @@
   (map->simple-enjin {:model* (or (:model overrides) ..model..)
                         :params* (or (:params overrides) ..params..)
                         :connectors* (or (:connectors overrides) ..connectors..)
-                        :enjin-deps* (or (:enjin-deps overrides) ..enjin-deps..)
+                        :enjins* (or (:enjins overrides) ..enjins..)
                         :webservices* (or (:webservices overrides) ..webservices..)}))
 
-(fact "enjin-dep should dereference an IPending requirement"
-  (let [ds (fsd {:enjin-deps {:foo (delay ..dep-a..)}})]
-    (enjin-dep ds :foo) => ..dep-a..))
+(fact "enjin should dereference an IPending requirement"
+  (let [ds (fsd {:enjins {:foo (delay ..dep-a..)}})]
+    (enjin ds :foo) => ..dep-a..))
 
 (fact "create-webservice should create some compojure routes"
   (let [ds (fsd {:webservices {:foo (fn [enjin] enjin =not=> nil ..webservice..)}})]
@@ -103,7 +103,7 @@
                   :application-promise ..promise..
                   :params {:param-a ..param-a.. :param-b ..param-b..}
                   :connectors {:conn-a ..conn-a.. :conn-b ..conn-b..}
-                  :enjin-deps {:ds-a ..ds-a.. :ds-b ..ds-b..})
+                  :enjins {:ds-a ..ds-a.. :ds-b ..ds-b..})
     => ..ds..
 
     (provided
@@ -112,5 +112,5 @@
                                   :application-promise ..promise..
                                   :params {:param-a ..param-a.. :param-b ..param-b..}
                                   :connectors {:conn-a ..conn-a.. :conn-b ..conn-b..}
-                                  :enjin-deps {:ds-a ..ds-a.. :ds-b ..ds-b..}
+                                  :enjins {:ds-a ..ds-a.. :ds-b ..ds-b..}
                                   :webservices {:ws-a ..ws-a.. :ws-b ..ws-b..}) => ..ds..)))

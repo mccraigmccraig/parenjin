@@ -14,12 +14,12 @@
   {:model true
    :params true
    :connectors true
-   :enjin-deps true
+   :enjins true
    :webservices true})
 
 (defn- check-requirements
   "check that the requirements declared in the enjins model are met"
-  [& {:keys [model params connectors enjin-deps webservices] :as args}]
+  [& {:keys [model params connectors enjins webservices] :as args}]
 
   (util/check-map check-requirements-arg-specs args)
 
@@ -63,10 +63,10 @@
     "the connectors supplied at creation time")
   (connector [this id]
     "get a connector by id")
-  (enjin-deps [this]
-    "the enjin-deps supplied at creation time")
-  (enjin-dep [this id]
-    "get a enjin-dep by id")
+  (enjins [this]
+    "the enjins supplied at creation time")
+  (enjin [this id]
+    "get a enjin by id")
 
   (webservices [this]
     "the webservices defined on the Enjin")
@@ -101,7 +101,7 @@
     (with-enjin enjin
       (apply handler params))))
 
-(defrecord-openly simple-enjin [model* application-promise* params* connectors* enjin-deps* webservices*]
+(defrecord-openly simple-enjin [model* application-promise* params* connectors* enjins* webservices*]
   Enjin
   (model [this] model*)
 
@@ -116,10 +116,10 @@
                          p)))
   (connectors [this] connectors*)
   (connector [this id] (connectors* id))
-  (enjin-deps [this] enjin-deps*)
-  (enjin-dep [this id]
+  (enjins [this] enjins*)
+  (enjin [this id]
     (let [req-type (get-in model* [:enjin-reqs id])
-          ds (util/deref-if-deref (enjin-deps* id))
+          ds (util/deref-if-deref (enjins* id))
           ds-type (get-in ds [:model* :model-type])]
       (if-not (= req-type ds-type)
         (throw (RuntimeException. (<< "enjin <~{id}> is of type <~{ds-type}> but is required to be of type <~{req-type}>"))))
@@ -130,31 +130,31 @@
   (create-webservices [this webservice-ids] (map-over-ids this create-webservice webservice-ids (keys webservices*))))
 
 (defn- create-simple-enjin*
-  [& {:keys [model application-promise params connectors enjin-deps webservices]}]
+  [& {:keys [model application-promise params connectors enjins webservices]}]
   (if-not model
     (throw (RuntimeException. "model required")))
 
   (check-requirements :model model
                       :params params
                       :connectors connectors
-                      :enjin-deps enjin-deps
+                      :enjins enjins
                       :webservices webservices)
 
   (map->simple-enjin {:model* model
                       :application-promise* application-promise
                       :params* (or params {})
                       :connectors* (or connectors {})
-                      :enjin-deps* (or enjin-deps {})
+                      :enjins* (or enjins {})
                       :webservices* (or webservices {})}))
 
 (def ^:private create-enjin-arg-specs
   {:application-promise true
    :params true
    :connectors true
-   :enjin-deps true})
+   :enjins true})
 
 (defn create-enjin
-  [model & {:keys [application-promise params connectors enjin-deps] :as args}]
+  [model & {:keys [application-promise params connectors enjins] :as args}]
 
   (util/check-map create-enjin-arg-specs args)
 
@@ -165,7 +165,7 @@
                           :application-promise application-promise
                           :params params
                           :connectors connectors
-                          :enjin-deps enjin-deps
+                          :enjins enjins
                           :webservices webservices)))
 
 ;; limit the depth to which a enjin will print, avoiding
