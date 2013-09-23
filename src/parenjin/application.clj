@@ -50,10 +50,9 @@
   "replace any params which are ApplicationRefs with resolvers"
   [app-promise params]
   (->> params
-       (map (fn [[k v]]
-              (if (instance? ApplicationRef v)
-                [k (aref/ref-resolver app-promise v)]
-                [k v])))
+       (map (fn [[k v]] (if (instance? ApplicationRef v)
+                         [k (aref/ref-resolver app-promise v)]
+                         [k v])))
        (into {})))
 
 (defn- fixup-enjins
@@ -61,8 +60,8 @@
   [app-promise enjin-delay-registry-promise enjins]
   (->> enjins
        (map (fn [[dep-id enjin-id]] (if (instance? ApplicationRef enjin-id)
-                                  [dep-id (aref/ref-resolver app-promise enjin-id)]
-                                  [dep-id (@enjin-delay-registry-promise enjin-id)])))
+                                     [dep-id (aref/ref-resolver app-promise enjin-id)]
+                                     [dep-id (@enjin-delay-registry-promise enjin-id)])))
        (into {})))
 
 (defn- create-enjin
