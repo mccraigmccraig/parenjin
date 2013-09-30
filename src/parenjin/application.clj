@@ -117,7 +117,7 @@
   (if devmode
     (fn [request]
       (destroy app)
-      (compojure/routing (create-web-routes app)))
+      (apply compojure/routing request (create-web-routes app)))
     (apply compojure/routes (create-web-routes app))))
 
 (defrecord-openly application-proxy [connectors* app-spec* app*]
@@ -139,7 +139,7 @@
   (destroy [this] (swap! app* (fn [_])) this)
 
   (create-webservice [this] (create-webservice this false))
-  (create-webservice [this devmode] (create-webservice* (create this) devmode))
+  (create-webservice [this devmode] (create-webservice* this devmode))
   )
 
 (defn create-application
