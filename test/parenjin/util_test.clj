@@ -1,6 +1,7 @@
 (ns parenjin.util-test
   (:use midje.sweet
-        parenjin.util))
+        parenjin.util)
+  (:import [java.util.concurrent CancellationException]))
 
 (fact "test-val should test a value against a spec returning true or false"
   (test-val true nil) => true
@@ -80,3 +81,45 @@
 
   (let [f (future (do (Thread/sleep 100) 1))]
     (future-status f) => :running))
+
+(with-state-changes [(around :facts (let [trackref (ref {})
+                                             result (promise)]
+                                         ?form ))]
+  (fact "start-or-noop should start a never started task"
+    (start-or-noop ..enjin.. trackref {:foo (fn [this] this => ..enjin.. (deliver result true) (Thread/sleep 100))} :foo) => :running
+    @result => true))
+
+(with-state-changes [(around :facts (let [trackref (ref {:foo (future (Thread/sleep 100) ..result..)})
+                                             result (promise)]
+                                         ?form ))]
+  (fact "start-or-noop should do nothing to a running task"
+    (start-or-noop ..enjin.. trackref {:foo (fn [this] this => ..enjin.. (deliver result true) (Thread/sleep 100))} :foo) => :running
+    (deref result 100 ..nocall..) => ..nocall..))
+
+(with-state-changes [(around :facts (let [b (promise)
+                                             trackref (ref {:foo (future (deliver b true) ..before-result..)})
+                                             a (promise)]
+                                         ?form ))]
+  (fact "start-or-noop should start a stopped task"
+    @b => true
+    (start-or-noop ..enjin.. trackref {:foo (fn [this] this => ..enjin.. (deliver a ..running..) (Thread/sleep 100) ..after-result..)} :foo) => :running
+    @a => ..running..
+    (-> trackref deref :foo deref) => ..after-result..))
+
+(with-state-changes [(around :facts (let [trackref (ref {})]
+                                         ?form ))]
+  (fact "stop-or-noop should do nothing to a never started task"
+    (stop-or-noop ..enjin.. trackref :foo) => :none
+    (-> trackref deref :foo) => nil))
+
+(with-state-changes [(around :facts (let [trackref (ref {:foo (future (Thread/sleep 100) ..result..)})]
+                                         ?form ))]
+  (fact "stop-or-noop should stop a running task"
+    (stop-or-noop ..enjin.. trackref :foo) => :stopped
+    (-> trackref deref :foo deref) => (throws CancellationException)))
+
+(with-state-changes [(around :facts (let [trackref (ref {:foo (future ..result..)})]
+                                         ?form ))]
+  (fact "stop-or-noop should do nothing to a stopped task"
+    (-> trackref deref :foo deref) => ..result..
+    (stop-or-noop ..enjin.. trackref :foo) => :stopped))

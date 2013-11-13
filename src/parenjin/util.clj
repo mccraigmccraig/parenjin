@@ -96,3 +96,22 @@
   (cond (and f (not (realized? f))) :running
         f :stopped
         true :none))
+
+(defn start-or-noop
+  "if it's not running call (defs id) in a future and retain the future in <trackref>"
+  [enjin trackref defs id]
+  (dosync
+   (let [f ((ensure trackref) id)]
+     (if (or (not f) (realized? f))
+       (ref-set trackref
+                (assoc @trackref id
+                       (future ((defs id) enjin)))))))
+  (future-status (@trackref id)))
+
+(defn stop-or-noop
+  "if it is running, stop the future in (@trackref id)"
+  [enjin trackref id]
+  (dosync
+   (if-let [f ((ensure trackref) id)]
+     (future-cancel f)))
+  (future-status (@trackref id)))

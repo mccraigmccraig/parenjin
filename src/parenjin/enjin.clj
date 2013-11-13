@@ -15,11 +15,12 @@
    :params true
    :connectors true
    :enjins true
-   :webservices true})
+   :webservices true
+   :jobs true})
 
 (defn- check-requirements
   "check that the requirements declared in the enjins model are met"
-  [& {:keys [model params connectors enjins webservices] :as args}]
+  [& {:keys [model params connectors enjins webservices jobs] :as args}]
 
   (util/check-map check-requirements-arg-specs args)
 
@@ -73,7 +74,20 @@
   (create-webservice [this webservice-id]
     "create the webservice with id <webservice-id>")
   (create-webservices [this webservice-ids]
-    "create webservices with ids <webservice-ids> which may be a list of ids or :all"))
+    "create webservices with ids <webservice-ids> which may be a list of ids or :all")
+
+  (jobs [this]
+    "the jobs defined on the Enjin")
+  (start-job [this job-id]
+    "start the job with id <job-id>")
+  (start-jobs [this job-ids]
+    "start jobs with ids <job-ids>, which may be a list of ids or :all")
+  (job-status [this job-id]
+    "fetch the status of job with id <job-id>")
+  (stop-job [this job-id]
+    "stop the job with id <job-id>")
+  (stop-jobs [this job-ids]
+    "stop jobs with ids <job-ids>, which may be a list of ids or :all"))
 
 (def ^:private ^:dynamic *current-enjin* nil)
 
@@ -101,7 +115,7 @@
     (with-enjin enjin
       (apply handler params))))
 
-(defrecord-openly simple-enjin [model* application-promise* params* connectors* enjins* webservices*]
+(defrecord-openly simple-enjin [model* application-promise* params* connectors* enjins* webservices* jobs* running-jobs*]
   Enjin
   (model [this] model*)
 
@@ -127,10 +141,17 @@
 
   (webservices [this] webservices*)
   (create-webservice [this webservice-id] ((webservices* webservice-id) this))
-  (create-webservices [this webservice-ids] (map-over-ids this create-webservice webservice-ids (keys webservices*))))
+  (create-webservices [this webservice-ids] (map-over-ids this create-webservice webservice-ids (keys webservices*)))
+
+  (jobs [this] jobs*)
+  (start-job [this job-id] (util/start-or-noop this running-jobs* jobs* job-id))
+  (start-jobs [this job-ids] (map-over-ids this start-job job-ids (keys jobs*)))
+  (job-status [this job-id] (util/future-status (@running-jobs* job-id)))
+  (stop-job [this job-id] (util/stop-or-noop this running-jobs* job-id))
+  (stop-jobs [this job-ids] (map-over-ids this stop-job job-ids (keys jobs*))))
 
 (defn- create-simple-enjin*
-  [& {:keys [model application-promise params connectors enjins webservices]}]
+  [& {:keys [model application-promise params connectors enjins webservices jobs]}]
   (if-not model
     (throw (RuntimeException. "model required")))
 
@@ -138,14 +159,17 @@
                       :params params
                       :connectors connectors
                       :enjins enjins
-                      :webservices webservices)
+                      :webservices webservices
+                      :jobs jobs)
 
   (map->simple-enjin {:model* model
                       :application-promise* application-promise
                       :params* (or params {})
                       :connectors* (or connectors {})
                       :enjins* (or enjins {})
-                      :webservices* (or webservices {})}))
+                      :webservices* (or webservices {})
+                      :jobs* (or jobs {})
+                      :running-jobs* (ref {})}))
 
 (def ^:private create-enjin-arg-specs
   {:application-promise true
@@ -159,14 +183,16 @@
   (util/check-map create-enjin-arg-specs args)
 
   (let [pmodel (enjm/persist-model model)
-        webservices (:webservices pmodel)]
+        webservices (:webservices pmodel)
+        jobs (:jobs pmodel)]
 
     (create-simple-enjin* :model pmodel
                           :application-promise application-promise
                           :params params
                           :connectors connectors
                           :enjins enjins
-                          :webservices webservices)))
+                          :webservices webservices
+                          :jobs jobs)))
 
 ;; limit the depth to which a enjin will print, avoiding
 ;; blowing the stack when circular references are used

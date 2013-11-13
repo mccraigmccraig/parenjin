@@ -4,9 +4,7 @@
   (:require [parenjin.enjin :as enj]
             [parenjin.enjin-model :as enjm]
             [parenjin.util :as util]
-            [compojure.core :as compojure])
-  (:import [clojure.lang ExceptionInfo]
-           [java.util.concurrent CancellationException]))
+            [compojure.core :as compojure]))
 
 (fact "check-requirements should check all requirements against provisions"
   (let [args {:model {:param-reqs ..param-reqs..
@@ -14,7 +12,8 @@
               :params ..params..
               :connectors ..connectors..
               :enjins ..enjins..
-              :webservices ..webservices..}]
+              :webservices ..webservices..
+              :jobs ..jobs..}]
 
     (apply #'enj/check-requirements (apply concat args)) => true
 
@@ -48,7 +47,8 @@
                               :params (or (:params overrides) ..params..)
                               :connectors (or (:connectors overrides) ..connectors..)
                               :enjins (or (:enjins overrides) ..enjins..)
-                              :webservices (or (:webservices overrides) ..webservices..)))
+                              :webservices (or (:webservices overrides) ..webservices..)
+                              :jobs (or (:jobs overrides) ..jobs..)))
 
 (fact
   (model (csd)) => ..model..
@@ -56,12 +56,14 @@
   (connectors (csd)) => ..connectors..
   (enjins (csd)) => ..enjins..
   (webservices (csd)) => ..webservices..
+  (jobs (csd)) => ..jobs..
   (provided
     (#'enj/check-requirements :model ..model..
                              :params ..params..
                              :connectors ..connectors..
                              :enjins ..enjins..
-                             :webservices ..webservices..) => true))
+                             :webservices ..webservices..
+                             :jobs ..jobs..) => true))
 
 (fact "enjin with an IDeref parameter should check parameter type when param method retrieves param"
   (let [bar-param (atom nil)
@@ -76,10 +78,12 @@
 (defn fsd
   [& [overrides]]
   (map->simple-enjin {:model* (or (:model overrides) ..model..)
-                        :params* (or (:params overrides) ..params..)
-                        :connectors* (or (:connectors overrides) ..connectors..)
-                        :enjins* (or (:enjins overrides) ..enjins..)
-                        :webservices* (or (:webservices overrides) ..webservices..)}))
+                      :params* (or (:params overrides) ..params..)
+                      :connectors* (or (:connectors overrides) ..connectors..)
+                      :enjins* (or (:enjins overrides) ..enjins..)
+                      :webservices* (or (:webservices overrides) ..webservices..)
+                      :jobs* (or (:jobs overrides) ..jobs..)
+                      :running-jobs* (ref (or (:running-jobs overrides) {}))}))
 
 (fact "enjin should dereference an IPending requirement"
   (let [ds (fsd {:enjins {:foo (delay ..dep-a..)}})]
@@ -94,10 +98,43 @@
                                :bar (fn [enjin] enjin =not=> nil ..bar-webservice..)}})]
     (create-webservices ds [:foo :bar]) => [..foo-webservice.. ..bar-webservice..]))
 
+(fact "start-job should start a job"
+  (let [ds (fsd)
+        rj (:running-jobs* ds)]
+    (start-job ds :foo) => ..started..
+    (provided
+      (util/start-or-noop ds rj ..jobs.. :foo) => ..started..)))
+
+(fact "start-jobs should start some jobs"
+  (let [ds (fsd {:jobs {:foo ..foo-job.. :bar ..bar-job.. :baz ..baz-job..}})]
+    (start-jobs ds [:foo :bar]) => ..started..
+    (provided
+      (#'enj/map-over-ids ds start-job [:foo :bar] [:foo :bar :baz]) => ..started..)))
+
+(fact "job-status should return the status of a job"
+  (let [ds (fsd {:running-jobs {:foo ..foo-future..}})]
+    (job-status ds :foo) => ..foo-status..
+    (provided
+      (util/future-status ..foo-future..) => ..foo-status..)))
+
+(fact "stop-job should stop a job"
+  (let [ds (fsd)
+        rj (:running-jobs* ds)]
+    (stop-job ds :foo) => ..stopped..
+    (provided
+      (util/stop-or-noop ds rj :foo) => ..stopped..)))
+
+(fact "stop-jobs should stop some jobs"
+  (let [ds (fsd {:jobs {:foo ..foo-job.. :bar ..bar-job.. :baz ..baz-job..}})]
+    (stop-jobs ds [:foo :bar]) => ..stopped..
+    (provided
+      (#'enj/map-over-ids ds stop-job [:foo :bar] [:foo :bar :baz]) => ..stopped..)))
+
 (fact "create-enjin should create a enjin from the supplied requirement-resolutions"
   (let [m (enjm/create-enjin-model :foo)
 
-        pmodel {:webservices {:ws-a ..ws-a.. :ws-b ..ws-b..}}]
+        pmodel {:webservices {:ws-a ..ws-a.. :ws-b ..ws-b..}
+                :jobs {:job-a ..job-a.. :job-b ..job-b..}}]
 
     (create-enjin m
                   :application-promise ..promise..
@@ -113,4 +150,5 @@
                                   :params {:param-a ..param-a.. :param-b ..param-b..}
                                   :connectors {:conn-a ..conn-a.. :conn-b ..conn-b..}
                                   :enjins {:ds-a ..ds-a.. :ds-b ..ds-b..}
-                                  :webservices {:ws-a ..ws-a.. :ws-b ..ws-b..}) => ..ds..)))
+                                  :webservices {:ws-a ..ws-a.. :ws-b ..ws-b..}
+                                  :jobs {:job-a ..job-a.. :job-b ..job-b..}) => ..ds..)))
