@@ -1,11 +1,11 @@
 (def shared
   '[
     [org.clojure/tools.logging "0.2.6"]
-    [org.clojure/core.incubator "0.1.2"]
+    [org.clojure/core.incubator "0.1.3"]
 
     [potemkin "0.3.3"]
 
-    [compojure "1.1.5"]
+    [compojure "1.1.6"]
     ])
 
 
@@ -21,13 +21,20 @@
   :scm {:name "git"
         :url "http://github.com/mccraigmccraig/parenjin"}
 
-  :plugins [[lein-midje "3.0.1"]]
+  :jvm-opts ["-Xmx1g"
+             "-server"
+             "-XX:MaxPermSize=128m"
+             "-XX:+CMSClassUnloadingEnabled"
+             "-XX:+UseConcMarkSweepGC"]
+
+  :plugins [[lein-midje "3.1.3-RC2"]]
 
   :dependencies ~(conj shared '[org.clojure/clojure "1.5.1"])
 
-  :aliases {"with-all-dev" ["with-profile" "1.4,dev:1.5,dev"]}
-  :profiles {:dev {:dependencies [[midje "1.5.1"]]}
+  :aliases {"with-all-dev" ["with-profile" "1.4,dev:1.5,dev:1.6,dev"]}
+  :profiles {:dev {:dependencies [[midje "1.6-beta1"]]}
              :production {}
              :1.4 {:dependencies [[org.clojure/clojure "1.4.0"]]}
-             :1.5 {:dependencies [[org.clojure/clojure "1.5.1"]]}}
+             :1.5 {:dependencies [[org.clojure/clojure "1.5.1"]]}
+             :1.6 {:dependencies [[org.clojure/clojure "1.6.0-alpha2"]]}}
   )
