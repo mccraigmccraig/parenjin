@@ -34,7 +34,13 @@
     (-> (defwebservice m :ws ..webservice..)
         :webservices*
         deref
-        :ws) => ..webservice..))
+        :ws) => ..webservice..)
+
+  (fact "defjob should register a job"
+    (-> (defjob m :j ..job..)
+        :jobs*
+        deref
+        :j) => ..job..))
 
 (with-state-changes [(around :facts (let [m (-> (create-enjin-model :foo)
                                                  (requires-param :a-param ..a-param-type..)
@@ -44,11 +50,14 @@
                                                  (requires-enjin :a-ds ..a-ds-type..)
                                                  (requires-enjin :b-ds ..b-ds-type..)
                                                  (defwebservice :a-webservice ..a-webservice..)
-                                                 (defwebservice :b-webservice ..b-webservice..))
+                                                 (defwebservice :b-webservice ..b-webservice..)
+                                                 (defjob :a-job ..a-job..)
+                                                 (defjob :b-job ..b-job..))
                                           pm (persist-model m)]
                                        ?form))]
   (fact "persist-model should create a map of the model content"
     (:param-reqs pm) => {:a-param ..a-param-type.. :b-param ..b-param-type..}
     (:connector-reqs pm) => {:a-conn ..a-conn-type.. :b-conn ..b-conn-type..}
     (:enjin-reqs pm) => {:a-ds ..a-ds-type.. :b-ds ..b-ds-type..}
-    (:webservices pm) => {:a-webservice ..a-webservice.. :b-webservice ..b-webservice..}))
+    (:webservices pm) => {:a-webservice ..a-webservice.. :b-webservice ..b-webservice..}
+    (:jobs pm) => {:a-job ..a-job.. :b-job ..b-job..}))

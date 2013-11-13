@@ -28,6 +28,9 @@
     "define a webservice on the enjin with id <webservice-id>. <websvcfn> is a function of one parameter, the enjin,
      which returns a list of compojure routes")
 
+  (defjob [this job-id jobfn]
+    "define a job on the enjin with id <job-id>. <jobfn> is a function of one parameter, the enjin")
+
   (persist-model [this]
     "create a persistent version of the EnjinModel"))
 
@@ -43,10 +46,11 @@
   [[:param-reqs* :param-reqs]
    [:connector-reqs* :connector-reqs]
    [:enjin-reqs* :enjin-reqs]
-   [:webservices* :webservices]])
+   [:webservices* :webservices]
+   [:jobs* :jobs]])
 
 (defrecord-openly enjin-model
-  [model-type* param-reqs* connector-reqs* enjin-reqs* webservices*]
+  [model-type* param-reqs* connector-reqs* enjin-reqs* webservices* jobs*]
 
   EnjinModel
   (model-type [this]
@@ -70,6 +74,9 @@
   (defwebservice [this webservice-id websvcfn]
     (assoc-def this webservices* webservice-id websvcfn))
 
+  (defjob [this job-id jobfn]
+    (assoc-def this jobs* job-id jobfn))
+
   (persist-model [this]
     (->> persist-model-fields
          (map (fn [[fromf tof]] [tof @(fromf this)]))
@@ -79,7 +86,8 @@
   "create a EnjinModel supplying a <model-type> which should uniquely identify the model"
   [model-type]
   (map->enjin-model {:model-type* model-type
-                       :param-reqs* (ref {})
-                       :connector-reqs* (ref {})
-                       :enjin-reqs* (ref {})
-                       :webservices* (ref {})}))
+                     :param-reqs* (ref {})
+                     :connector-reqs* (ref {})
+                     :enjin-reqs* (ref {})
+                     :webservices* (ref {})
+                     :jobs* (ref {})}))
