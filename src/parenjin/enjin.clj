@@ -11,8 +11,6 @@
             [parenjin.application-ref :as aref])
   (:import [parenjin.enjin_model EnjinModel]))
 
-(import-vars [parenjin.enjin-ref-param with-params* with-params])
-
 (def ^:private check-requirements-arg-specs
   {:model true
    :params true
@@ -246,3 +244,15 @@
 (defmethod print-dup simple-enjin
   [enjin writer]
   (print-enjin enjin writer))
+
+(defn with-params*
+  "call function f after binding app references for the enjin"
+  [enjin the-params f]
+  (aref/with-app-refs*
+    (deref (:application-promise* enjin))
+    (enjrp/app-refs (params enjin) the-params) f))
+
+(defmacro with-params
+  "wrap forms in a lambda after binding app references for the enjin"
+  [enjin the-params & forms]
+  `(with-params* ~enjin ~the-params (fn [] ~@forms)))

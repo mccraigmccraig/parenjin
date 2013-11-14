@@ -2,6 +2,7 @@
   (:use midje.sweet
         parenjin.enjin)
   (:require [parenjin.enjin-ref-param :as enjrp]
+            [parenjin.application-ref :as aref]
             [parenjin.enjin :as enj]
             [parenjin.enjin-model :as enjm]
             [parenjin.util :as util]
@@ -196,3 +197,23 @@
                                            :enjin-c ..enjin-c-delay..}
                                   :webservices {}
                                   :jobs {}) => ..ds..)))
+
+(fact "with-params* should set application refs from the enjin param bindings and call the function"
+  (let [ref #app/ref :app-foo
+        app-promise (promise)
+        resolver (aref/ref-resolver app-promise ref)
+        enjin (map->simple-enjin {:application-promise* app-promise
+                                  :params* {:foo resolver}})]
+    (deliver app-promise ..app..)
+    (fact
+      (with-params* enjin {:foo ..value..} (fn [] (get-in @#'aref/*application-refs* [..app.. :app-foo]))) => ..value..)))
+
+(fact "with-params should set application refs from the enjin param bindings and call the forms wrapped in a lambda"
+  (let [ref #app/ref :app-foo
+        app-promise (promise)
+        resolver (aref/ref-resolver app-promise ref)
+        enjin (map->simple-enjin {:application-promise* (atom ..app..)
+                                  :params* {:foo resolver}})]
+    (deliver app-promise ..app..)
+    (fact
+      (with-params enjin {:foo ..value..} (get-in @#'aref/*application-refs* [..app.. :app-foo])) => ..value..)))

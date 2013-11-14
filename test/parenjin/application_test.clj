@@ -123,7 +123,6 @@
                                           foosB (enjins :foosB)]
                                       ?form))]
   (fact "create-enjins should allow circular dependencies amongst enjins"
-    ;;    (enj/param foosA :tag) => "foosA"
     (-> foosA :enjin* :params* :tag) => "foosA"
     (-> foosA :enjin* :enjins* :other-foos deref) => foosB
 

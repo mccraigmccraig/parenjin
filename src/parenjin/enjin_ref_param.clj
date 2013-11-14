@@ -4,27 +4,17 @@
   (:require [parenjin.application-ref :as aref])
   (:import [parenjin.application_ref ApplicationRef ApplicationFixRef ApplicationRefResolver]))
 
-(defn- app-refs
+(defn app-refs
   "convert the enjin param bindings to app ref bindings by following the ApplicationRefResolver
    references"
-  [enjin params]
+  [enjin-params params]
   (->> params
        (map (fn [[k v]]
-              (let [resolver (get-in enjin [:params* k])]
+              (let [resolver (get enjin-params k)]
                 (if-not (instance? ApplicationRefResolver resolver)
                   (throw (RuntimeException. (<< "param: <~{k}> is not an app reference (~(type resolver))"))))
                 [(aref/get-ref-name resolver) v])))
        (into {})))
-
-(defn with-params*
-  "call function f after binding app references for the enjin"
-  [enjin params f]
-  (aref/with-app-refs* (deref (:application-promise* enjin)) (app-refs enjin params) f))
-
-(defmacro with-params
-  "wrap forms in a lambda after binding app references for the enjin"
-  [enjin params & forms]
-  `(with-params* ~enjin ~params (fn [] ~@forms)))
 
 (defn extract-fixed-app-refs
   "extract any app/fix-refs values from the map into a {app-ref value} map"
@@ -39,7 +29,7 @@
   [app-promise m]
   (->> m
        (map (fn [[k v]]
-              (cond (instance? ApplicationFixRef v) [k (aref/ref-resolver app-promise (aref/fix-ref-name v))]
-                    (instance? ApplicationRef v) [k (aref/ref-resolver app-promise (aref/ref-name v))]
+              (cond (instance? ApplicationFixRef v) [k (aref/ref-resolver app-promise (aref/fix-app-ref v))]
+                    (instance? ApplicationRef v) [k (aref/ref-resolver app-promise v)]
                     true [k v])))
        (into {})))
