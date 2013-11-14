@@ -33,3 +33,20 @@
     (deliver app-promise ..app..)
     (fact
       (with-params enjin {:foo ..value..} (get-in @#'aref/*application-refs* [..app.. :app-foo])) => ..value..)))
+
+(fact "extract-fixed-app-refs should extract app-refs from any ApplicationFixRef values in the map"
+  (extract-fixed-app-refs {:foo #app/ref :fooref
+                           :bar #app/fix-ref [:barref 100]
+                           :baz #app/fix-ref [:bazref "baz"]}) =>
+  {:barref 100 :bazref "baz"})
+
+(fact "literal-or-resolver-values should extract literal values or ref-resolvers from a map"
+  (literal-or-resolver-values ..app-promise.. {:foo #app/ref :fooref
+                                               :bar #app/fix-ref [:barref 100]
+                                               :baz "baz"}) =>
+  {:foo ..fooref-resolver..
+   :bar ..barref-resolver..
+   :baz "baz"}
+  (provided
+    (aref/ref-resolver ..app-promise.. :fooref) => ..fooref-resolver..
+    (aref/ref-resolver ..app-promise.. :barref) => ..barref-resolver..))
