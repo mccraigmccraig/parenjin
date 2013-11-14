@@ -123,3 +123,9 @@
   (fact "stop-or-noop should do nothing to a stopped task"
     (-> trackref deref :foo deref) => ..result..
     (stop-or-noop ..enjin.. trackref :foo) => :stopped))
+
+(fact "merge-check-disjoint should merge two maps with disjoint keys"
+  (merge-check-disjoint {:foo 10} {:bar 20}) => {:foo 10 :bar 20})
+
+(fact "merge-check-disjoint should bork if map keys are not disjoint sets"
+  (merge-check-disjoint {:foo 10} {:foo 20}) => (throws #"key clash.*:foo"))

@@ -115,3 +115,11 @@
    (if-let [f ((ensure trackref) id)]
      (future-cancel f)))
   (future-status (@trackref id)))
+
+(defn merge-check-disjoint
+  "merge two maps, throwing an exception if their keysets are not disjoint"
+  [ma mb & [msg]]
+  (let [shared-keys (set/intersection (-> ma keys set) (-> mb keys set))]
+    (if (empty? shared-keys)
+      (merge ma mb)
+      (throw (RuntimeException. (str (or msg "key clash: ") shared-keys))))))
