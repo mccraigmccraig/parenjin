@@ -7,7 +7,8 @@
             [compojure.core :as compojure]
             [parenjin.util :as util]
             [parenjin.enjin-model :as enjm]
-            parenjin.enjin-ref-param)
+            [parenjin.enjin-ref-param :as enjrp]
+            [parenjin.application-ref :as aref])
   (:import [parenjin.enjin_model EnjinModel]))
 
 (import-vars [parenjin.enjin-ref-param with-params* with-params])
@@ -171,6 +172,28 @@
                       :jobs* (or jobs {})
                       :running-jobs* (ref {})}))
 
+;; enjin-fixref-proxy sets any fixed app-refs before proxying to an enjin implementation
+(defrecord-openly enjin-fixref-proxy [enjin* application-promise* app-refs*]
+  Enjin
+  (model [this] (aref/with-app-refs @application-promise* app-refs* (model enjin*)))
+  (application [this] (aref/with-app-refs @application-promise* app-refs* (application enjin*)))
+  (params [this] (aref/with-app-refs @application-promise* app-refs* (params enjin*)))
+  (param [this name] (aref/with-app-refs @application-promise* app-refs* (param enjin* name)))
+  (connectors [this] (aref/with-app-refs @application-promise* app-refs* (connectors enjin*)))
+  (connector [this id] (aref/with-app-refs @application-promise* app-refs* (connector enjin* id)))
+  (enjins [this] (aref/with-app-refs @application-promise* app-refs* (enjins enjin*)))
+  (enjin [this id] (aref/with-app-refs @application-promise* app-refs* (enjin enjin* id)))
+  (webservices [this] (aref/with-app-refs @application-promise* app-refs* (webservices enjin*)))
+  (create-webservice [this webservice-id] (aref/with-app-refs @application-promise* app-refs* (create-webservice enjin* webservice-id)))
+  (create-webservices [this webservice-ids] (aref/with-app-refs @application-promise* app-refs* (create-webservices enjin* webservice-ids)))
+  (jobs [this] (aref/with-app-refs @application-promise* app-refs* (jobs enjin*)))
+  (start-job [this job-id] (aref/with-app-refs @application-promise* app-refs* (start-job enjin* job-id)))
+  (start-jobs [this job-ids] (aref/with-app-refs @application-promise* app-refs* (start-jobs enjin* job-ids)))
+  (job-status [this job-id] (aref/with-app-refs @application-promise* app-refs* (job-status enjin* job-id)))
+  (stop-job [this job-id] (aref/with-app-refs @application-promise* app-refs* (stop-job enjin* job-id)))
+  (stop-jobs [this job-ids] (aref/with-app-refs @application-promise* app-refs* (stop-jobs enjin* job-ids))))
+
+
 (def ^:private create-enjin-arg-specs
   {:application-promise true
    :params true
@@ -182,17 +205,25 @@
 
   (util/check-map create-enjin-arg-specs args)
 
-  (let [pmodel (enjm/persist-model model)
-        webservices (:webservices pmodel)
-        jobs (:jobs pmodel)]
+  (let [fixed-app-param-refs (enjrp/extract-fixed-app-refs params)
+        fixed-app-enjin-refs (enjrp/extract-fixed-app-refs enjins)
+        fixed-app-refs (util/merge-check-disjoint fixed-app-enjin-refs fixed-app-param-refs "enjin/param app/ref collision: ")
 
-    (create-simple-enjin* :model pmodel
-                          :application-promise application-promise
-                          :params params
-                          :connectors connectors
-                          :enjins enjins
-                          :webservices webservices
-                          :jobs jobs)))
+        literal-or-resolver-params (enjrp/literal-or-resolver-values application-promise params)
+        literal-or-resolver-enjins (enjrp/literal-or-resolver-values application-promise enjins)
+
+        pmodel (enjm/persist-model model)
+        webservices (:webservices pmodel)
+        jobs (:jobs pmodel)
+        enj (create-simple-enjin* :model pmodel
+                                  :application-promise application-promise
+                                  :params literal-or-resolver-params
+                                  :connectors connectors
+                                  :enjins literal-or-resolver-enjins
+                                  :webservices webservices
+                                  :jobs jobs)]
+
+    (map->enjin-fixref-proxy {:enjin* enj :application-promise* application-promise :app-refs* fixed-app-refs})))
 
 ;; limit the depth to which a enjin will print, avoiding
 ;; blowing the stack when circular references are used

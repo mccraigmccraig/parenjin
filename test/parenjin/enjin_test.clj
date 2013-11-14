@@ -1,7 +1,8 @@
 (ns parenjin.enjin-test
   (:use midje.sweet
         parenjin.enjin)
-  (:require [parenjin.enjin :as enj]
+  (:require [parenjin.enjin-ref-param :as enjrp]
+            [parenjin.enjin :as enj]
             [parenjin.enjin-model :as enjm]
             [parenjin.util :as util]
             [compojure.core :as compojure]))
@@ -141,7 +142,7 @@
                   :params {:param-a ..param-a.. :param-b ..param-b..}
                   :connectors {:conn-a ..conn-a.. :conn-b ..conn-b..}
                   :enjins {:ds-a ..ds-a.. :ds-b ..ds-b..})
-    => ..ds..
+    => {:enjin* ..ds.. :application-promise* ..promise.. :app-refs* {}}
 
     (provided
       (enjm/persist-model m) => pmodel
@@ -152,3 +153,46 @@
                                   :enjins {:ds-a ..ds-a.. :ds-b ..ds-b..}
                                   :webservices {:ws-a ..ws-a.. :ws-b ..ws-b..}
                                   :jobs {:job-a ..job-a.. :job-b ..job-b..}) => ..ds..)))
+
+(fact "create-enjin should store any fixed app-refs in the proxy"
+  (let [m (enjm/create-enjin-model :foo)
+
+        pmodel {:webservices {}
+                :jobs {}}
+
+        params {:param-a #app/fix-ref [:param-a-ref "100"]
+                :param-b #app/ref :param-b-ref
+                :param-c ..param-c..}
+
+        enjins {:enjin-a #app/fix-ref [:enjin-a-ref ..enjin-a-delay..]
+                :enjin-b #app/ref :enjin-b-ref
+                :enjin-c ..enjin-c-delay..}]
+
+    (create-enjin m
+                  :application-promise ..promise..
+                  :params params
+                  :connectors {}
+                  :enjins enjins)
+    => {:enjin* ..ds.. :application-promise* ..promise.. :app-refs* {:param-a-ref "100" :enjin-a-ref ..enjin-a-delay..}}
+
+    (provided
+      (enjm/persist-model m) => pmodel
+
+      (enjrp/literal-or-resolver-values ..promise.. params) => {:param-a ..param-a-ref-resolver..
+                                                                :param-b ..param-b-ref-resolver..
+                                                                :param-c ..param-c..}
+      (enjrp/literal-or-resolver-values ..promise.. enjins) => {:enjin-a ..enjin-a-ref-resolver..
+                                                                :enjin-b ..enjin-b-ref-resolver..
+                                                                :enjin-c ..enjin-c-delay..}
+
+      (#'enj/create-simple-enjin* :model pmodel
+                                  :application-promise ..promise..
+                                  :params {:param-a ..param-a-ref-resolver..
+                                           :param-b ..param-b-ref-resolver..
+                                           :param-c ..param-c..}
+                                  :connectors {}
+                                  :enjins {:enjin-a ..enjin-a-ref-resolver..
+                                           :enjin-b ..enjin-b-ref-resolver..
+                                           :enjin-c ..enjin-c-delay..}
+                                  :webservices {}
+                                  :jobs {}) => ..ds..)))
