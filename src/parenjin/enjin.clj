@@ -10,6 +10,8 @@
             parenjin.enjin-ref-param)
   (:import [parenjin.enjin_model EnjinModel]))
 
+(import-vars [parenjin.enjin-ref-param with-params* with-params])
+
 (def ^:private check-requirements-arg-specs
   {:model true
    :params true
@@ -104,8 +106,6 @@
 (defmacro with-enjin
   "wrap forms in a lambda, and call with current enjin bound"
   [enjin & forms] `(with-enjin* ~enjin (fn [] ~@forms)))
-
-(import-vars [parenjin.enjin-ref-param with-params* with-params])
 
 (defn- wrap-current-enjin
   "wrap a compojure handler in a with-enjin form so that

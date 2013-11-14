@@ -10,6 +10,8 @@
   (:import [parenjin.application_ref ApplicationRef ApplicationRefResolver]
            [parenjin.application_proxy ApplicationProxy]))
 
+(import-vars [parenjin.application-proxy create destroy create-webservice])
+
 (defprotocol Application
 
   "applications combine :
@@ -106,8 +108,6 @@
     (deliver app-promise application)
 
     application))
-
-(import-vars [parenjin.application-proxy create destroy create-webservice])
 
 (defn- create-webservice*
   "create a compojure route for the application.
