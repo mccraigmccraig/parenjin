@@ -178,4 +178,4 @@
   (provided
     (app/destroy ..app..) => ..app..
     (app/create-web-routes ..app..) => [..route.. ..another-route..]
-    (compojure/routing [..route.. ..another-route..]) => ..webservice-result..))
+    (compojure/routing ..request.. ..route.. ..another-route..) => ..webservice-result..))
