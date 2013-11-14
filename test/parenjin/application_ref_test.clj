@@ -38,7 +38,25 @@
 (fact "with-app-refs should set app-refs and call function, derefing any ref values which are IDerefs"
   (let [param-ref #app/ref :foo
         app-promise (promise)
-        pr (ref-resolver app-promise param-ref)]
-    (deliver app-promise ..app..)
+        pr (ref-resolver app-promise param-ref)
+        _ (deliver app-promise ..app..)]
     (with-app-refs* ..app.. {:foo (atom ..value..)} (fn [] @pr)) => ..value..
     (with-app-refs* ..app.. {:foo (atom ..another..)} (fn [] @pr)) => ..another..))
+
+(fact "with-app-refs should merge new app-refs with existing app-refs"
+  (let [param-ref #app/ref :foo
+        app-promise (promise)
+        pr (ref-resolver app-promise param-ref)
+        _ (deliver app-promise ..app..)]
+    (with-app-refs ..app.. {:foo ..foo-value..}
+      (with-app-refs ..app.. {:bar ..bar-value..}
+        (@#'aref/*application-refs* ..app..))) => {:foo ..foo-value.. :bar ..bar-value..}))
+
+(fact "with-app-refs should bork if new app-refs clash with existing"
+  (let [param-ref #app/ref :foo
+        app-promise (promise)
+        pr (ref-resolver app-promise param-ref)
+        _ (deliver app-promise ..app..)]
+    (with-app-refs ..app.. {:foo ..foo-value..}
+      (with-app-refs ..app.. {:foo ..another-value..}
+        (@#'aref/*application-refs* ..app..))) => (throws RuntimeException #"can't rebind.*:foo")))
