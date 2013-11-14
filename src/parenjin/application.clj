@@ -7,7 +7,7 @@
             [parenjin.enjin-model :as dsm]
             [parenjin.application-proxy :as aproxy]
             [parenjin.application-ref :as aref])
-  (:import [parenjin.application_ref ApplicationRef ApplicationRefResolver]
+  (:import [parenjin.application_ref ApplicationRef ApplicationFixRef ApplicationRefResolver]
            [parenjin.application_proxy ApplicationProxy]))
 
 (import-vars [parenjin.application-proxy create destroy create-webservice])
@@ -48,36 +48,36 @@
 
   (create-web-routes [this] (create-web-routes* app-spec* enjins*)))
 
-(defn- fixup-params
-  "replace any params which are ApplicationRefs with resolvers"
-  [app-promise params]
-  (->> params
-       (map (fn [[k v]] (if (instance? ApplicationRef v)
-                         [k (aref/ref-resolver app-promise v)]
-                         [k v])))
-       (into {})))
-
 (defn- fixup-enjins
-  "replace any enjins which are ApplicationRefs with resolvers"
-  [app-promise enjin-delay-registry-promise enjins]
+  "replace enjin ids with delays, dealing with ApplicationRef and ApplicationFixRef cases"
+  [enjin-delay-registry-promise enjins]
   (->> enjins
-       (map (fn [[dep-id enjin-id]] (if (instance? ApplicationRef enjin-id)
-                                     [dep-id (aref/ref-resolver app-promise enjin-id)]
-                                     [dep-id (@enjin-delay-registry-promise enjin-id)])))
+       (map (fn [[dep-id enjin-id]]
+              (cond (instance? ApplicationRef enjin-id)
+                    [dep-id enjin-id]
+
+                    (instance?  ApplicationFixRef enjin-id) ;; the fixed value becomes the delay to the enjin
+                    [dep-id (aref/map->application-fix-ref
+                             {:fix-ref-name* (:fix-ref-name* enjin-id)
+                              :fix-ref-value* (@enjin-delay-registry-promise (:fix-ref-value* enjin-id))})]
+
+                    true
+                    [dep-id (@enjin-delay-registry-promise enjin-id)])))
        (into {})))
 
 (defn- create-enjin
-  "create a enjin from an application's specification"
+  "create an enjin from an application's specification"
   [connector-registry app-promise enjin-delay-registry-promise enjin-spec]
 
   (let [model (-> enjin-spec :model util/resolve-obj)
         connectors (->> enjin-spec :connectors (map (fn [[conn-id reg-id]] [conn-id (get connector-registry reg-id)])) (into {}))
+        use-params (or (:params enjin-spec) {})
 ]
     (enj/create-enjin model
                       :application-promise app-promise
-                      :params (fixup-params app-promise (:params enjin-spec))
+                      :params use-params
                       :connectors connectors
-                      :enjins (fixup-enjins app-promise enjin-delay-registry-promise (:enjins enjin-spec)))))
+                      :enjins (fixup-enjins enjin-delay-registry-promise (:enjins enjin-spec)))))
 
 (defn- create-enjins
   [connector-registry app-promise app-spec]

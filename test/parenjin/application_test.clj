@@ -2,16 +2,47 @@
   (:use midje.sweet
         parenjin.application)
   (:require [parenjin.application :as app]
+            [parenjin.application-ref :as aref]
             [parenjin.enjin :as enj]
             [parenjin.enjin-model :as enjm]
             [compojure.core :as compojure]))
+
+(def n (-> (enjm/create-enjin-model :foos)
+           (enjm/requires-param :tag String)))
+
+(with-state-changes [(around :facts (let [spec {:enjins {:foomsA {:model n
+                                                                  :params {:tag "foomsA"}
+                                                                  :webservices [:foo :bar]}
+                                                         :foomsB {:model n
+                                                                  :params {:tag "foomsB"}}}}
+                                          app-promise (promise)
+                                          enjins (#'app/create-enjins {} app-promise spec)
+                                          foomsA (enjins :foomsA)
+                                          foomsB (enjins :foomsB)]
+                                      ?form))]
+  (fact "create-web-routes* should create web-routes according to an app specification"
+    (#'app/create-web-routes* spec enjins) => [..fooms-a-route-1.. ..fooms-a-route-2.. ..fooms-b-route-1.. ..fooms-b-route-2..]
+    (provided
+      (enj/create-webservices foomsA [:foo :bar]) => [..fooms-a-route-1.. ..fooms-a-route-2..]
+      (enj/create-webservices foomsB :all) => [..fooms-b-route-1.. ..fooms-b-route-2..])))
+
+(fact "fixup-enjins should replace enjin-ids and the value of ApplicationFixRefs with delays, and leave ApplicationRefs"
+  (#'app/fixup-enjins (delay {:foo-enjin ..foo-enjin-delay..
+                              :bar-enjin ..bar-enjin-delay..})
+                      {:enjin-a #app/ref :enjin-a-ref
+                       :enjin-b #app/fix-ref [:enjin-b-ref :foo-enjin]
+                       :enjin-c :bar-enjin}) =>
+
+                       {:enjin-a #app/ref :enjin-a-ref
+                        :enjin-b (aref/map->application-fix-ref {:fix-ref-name* :enjin-b-ref :fix-ref-value* ..foo-enjin-delay..})
+                        :enjin-c ..bar-enjin-delay..})
 
 (with-state-changes [(around :facts (let [spec {:model ..model..
                                                 :params {:aparam 10 :anotherparam "boo"}
                                                 :connectors {:myx :x
                                                              :myy :y}
                                                 :enjins {:mybars :bars
-                                                             :mybazs :bazs}}
+                                                         :mybazs :bazs}}
                                           app-promise (promise)
                                           params (:params spec)
                                           bardsdelay (delay ..bards..)
@@ -29,6 +60,33 @@
                                             :params params
                                             :connectors {:myx ..xconn.. :myy ..yconn..}
                                             :enjins {:mybars bardsdelay :mybazs bazdsdelay}) => ..enjin..)))
+
+(with-state-changes [(around :facts (let [spec {:model ..model..
+                                                :params {}
+                                                :connectors {}
+                                                :enjins {:myfoo :foo
+                                                         :mybar (aref/map->application-ref {:ref-name* :bar-ref})
+                                                         :mybaz (aref/map->application-fix-ref {:fix-ref-name* :baz-ref
+                                                                                                :fix-ref-value* :baz})}}
+                                          app-promise (promise)]
+                                      ?form))]
+  (fact "create-enjin should create an enjin from a specification with app/ref and app/fix-refs enjins"
+
+    (#'app/create-enjin {}
+                        app-promise
+                        (delay {:foo ..foo-enjin-delay..  :baz ..baz-enjin-delay..})
+                        spec) => ..enjin..
+                        (provided
+                          (enj/create-enjin ..model..
+                                            :application-promise app-promise
+                                            :params {}
+                                            :connectors {}
+                                            :enjins {:myfoo ..foo-enjin-delay..
+                                                     :mybar (aref/map->application-ref {:ref-name* :bar-ref})
+                                                     :mybaz (aref/map->application-fix-ref {:fix-ref-name* :baz-ref
+                                                                                            :fix-ref-value* ..baz-enjin-delay..})
+                                                     }) => ..enjin..)))
+
 
 (with-state-changes [(around :facts (let [spec {:enjins {:foos {:model ..foos-model..}
                                                          :bars {:model ..bars-model..}}}
@@ -65,30 +123,13 @@
                                           foosB (enjins :foosB)]
                                       ?form))]
   (fact "create-enjins should allow circular dependencies amongst enjins"
-    (-> foosA :params* :tag) => "foosA"
-    (-> foosA :enjins* :other-foos deref) => foosB
+    ;;    (enj/param foosA :tag) => "foosA"
+    (-> foosA :enjin* :params* :tag) => "foosA"
+    (-> foosA :enjin* :enjins* :other-foos deref) => foosB
 
-    (-> foosB :params* :tag) => "foosB"
-    (-> foosB :enjins* :other-foos deref) => foosA))
+    (-> foosB :enjin* :params* :tag) => "foosB"
+    (-> foosB :enjin* :enjins* :other-foos deref) => foosA))
 
-(def n (-> (enjm/create-enjin-model :foos)
-           (enjm/requires-param :tag String)))
-
-(with-state-changes [(around :facts (let [spec {:enjins {:foomsA {:model n
-                                                                   :params {:tag "foomsA"}
-                                                                   :webservices [:foo :bar]}
-                                                           :foomsB {:model n
-                                                                    :params {:tag "foomsB"}}}}
-                                          app-promise (promise)
-                                          enjins (#'app/create-enjins {} app-promise spec)
-                                          foomsA (enjins :foomsA)
-                                          foomsB (enjins :foomsB)]
-                                      ?form))]
-  (fact "create-web-routes* should create web-routes according to an app specification"
-    (#'app/create-web-routes* spec enjins) => [..fooms-a-route-1.. ..fooms-a-route-2.. ..fooms-b-route-1.. ..fooms-b-route-2..]
-    (provided
-      (enj/create-webservices foomsA [:foo :bar]) => [..fooms-a-route-1.. ..fooms-a-route-2..]
-      (enj/create-webservices foomsB :all) => [..fooms-b-route-1.. ..fooms-b-route-2..])))
 
 (with-state-changes [(around :facts (let [conn {:aconn ..aconn.. :bconn ..bconn..}
                                           spec {:enjins {:foomsA {:model n
