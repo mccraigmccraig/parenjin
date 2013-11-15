@@ -116,9 +116,12 @@
   (future-status (@trackref id)))
 
 (defn merge-check-disjoint
-  "merge two maps, throwing an exception if their keysets are not disjoint"
+  "merge two maps, throwing an exception if their keysets are not disjoint and values
+   relating to the intersecting keys are different"
   [ma mb & [msg]]
   (let [shared-keys (set/intersection (-> ma keys set) (-> mb keys set))]
     (if (empty? shared-keys)
       (merge ma mb)
-      (throw (RuntimeException. (str (or msg "key clash: ") shared-keys))))))
+      (if (reduce #(and %1 %2) (map identical? (map ma shared-keys) (map mb shared-keys)))
+        (merge ma mb)
+        (throw (RuntimeException. (str (or msg "key clash: ") shared-keys)))))))
