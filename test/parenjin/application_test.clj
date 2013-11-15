@@ -167,6 +167,43 @@
       (enj/param a :tag) => "foo"
       (enj/param b :tag) => "foo")))
 
+(def app-fix-param-ref-spec {:enjins {:A {:model n
+                                          :params {:tag #app/ref :ze-tag}}
+                                      :B {:model n
+                                          :params {:tag #app/fix-ref [:ze-tag "foo"]}}}})
+(with-state-changes [(around :facts (let [app (#'app/create-application* {} app-fix-param-ref-spec)
+                                          a (app/enjin app :A)
+                                          b (app/enjin app :B)]
+                                        ?form))]
+    (fact "application should allow fixing of params to application-refs, but should not allow re-binding"
+      (enj/param b :tag) => "foo"
+      (enj/with-params b {:tag "bar"} (enj/param b :tag)) => (throws RuntimeException  #"can't rebind.*:ze-tag")
+
+      (enj/with-params a {:tag "bar"} (enj/param a :tag)) => "bar"
+      (enj/with-params b {}
+        (enj/with-params a {:tag "bar"} (enj/param a :tag))) => "bar"))
+
+(def q (-> (enjm/create-enjin-model :foos)
+           (enjm/requires-param :a-param)
+           (enjm/requires-enjin :some-bars :bars)))
+(def r (-> (enjm/create-enjin-model :bars)
+           (enjm/requires-param :another-param)))
+(def app-fix-param-ref-enjin-dep-spec {:enjins {:A {:model q
+                                                    :params {:a-param #app/fix-ref [:a-ref "blah"]}
+                                                    :enjins {:some-bars :B}}
+                                                :B {:model r
+                                                    :params {:another-param #app/ref :a-ref}}}})
+(with-state-changes [(around :facts (let [app (#'app/create-application* {} app-fix-param-ref-enjin-dep-spec)
+                                          a (app/enjin app :A)
+                                          b (app/enjin app :B)]
+                                      ?form))]
+  (fact "application should allow fixing of params to application-refs across enjin dependency links"
+;;      (enj/param a :a-param) => "blah"
+      ;; (-> a
+      ;;     (enj/enjin :some-bars)
+      ;;     (enj/param :another-param)) => "blah"
+          ))
+
 (def o (-> (enjm/create-enjin-model :foos)
            (enjm/requires-enjin :some-bars :bars)))
 
@@ -186,6 +223,7 @@
     (enj/with-params b {:of b}
 
       (enj/enjin a :some-bars) => b)))
+
 
 (with-state-changes [(around :facts (let [app-proxy (create-application {} ..app-spec..)]
                                       ?form))]

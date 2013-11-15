@@ -1,5 +1,6 @@
 (ns parenjin.application
-  (:use midje.open-protocols
+  (:use midje.sweet
+        midje.open-protocols
         potemkin)
   (:require [compojure.core :as compojure]
             [parenjin.util :as util]

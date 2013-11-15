@@ -1,7 +1,6 @@
 (ns parenjin.util
   (:use clojure.core.strint)
-  (:require [clojure.set :as set])
-  )
+  (:require [clojure.set :as set]))
 
 (defn derefable?
   "true if obj is an instance of clojure.lang.IDeref"

@@ -1,6 +1,5 @@
 (ns parenjin.enjin-ref-param
-  (:use clojure.core.strint
-        midje.open-protocols)
+  (:use clojure.core.strint)
   (:require [parenjin.application-ref :as aref])
   (:import [parenjin.application_ref ApplicationRef ApplicationFixRef ApplicationRefResolver]))
 
