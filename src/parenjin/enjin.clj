@@ -216,34 +216,43 @@
   (stop-jobs [this job-ids] (with-fixref-proxy-app-refs this (stop-jobs (util/deref-if-deref enjin*) job-ids)))
 
   (enjins [this] enjin-proxies*)
-  (enjin [this id] (with-fixref-proxy-app-refs this @(enjin-proxies* id))))
+  (enjin [this id] @(enjin-proxies* id)))
 
-(defn dependent-enjin-proxies
+(declare dependent-enjin-proxies)
+
+(defn- resolve-and-merge-refs
+  "resolve an EnjinFixrefProxy from an IDeref (Delay or ApplicationRefResolver), then create
+   a new EnjinFixrefProxy with merged app-refs"
+  [app-promise app-refs enjin-proxy-ref-or-delay]
+  (aref/with-app-refs (deref app-promise 0 nil) app-refs
+         (let [resolved @enjin-proxy-ref-or-delay]
+           (if resolved
+             (map->enjin-fixref-proxy
+              {:application-promise* app-promise
+               :app-refs* (util/merge-check-disjoint app-refs (:app-refs* resolved))
+               :enjin* (:enjin* resolved)
+               :enjin-proxies* (dependent-enjin-proxies app-promise app-refs (:enjin-proxies* resolved))})))))
+
+(defn- dependent-enjin-proxy
+  "different strategies for dependent enjin proxy merging... if it's a plain reference, then do it once,
+   but if it's a dynamic reference, do it every time"
+  [app-promise app-refs enjin-proxy-ref-or-delay]
+  (if (instance? ApplicationRefResolver enjin-proxy-ref-or-delay)
+    (util/ideref-clojure
+     (fn [] (resolve-and-merge-refs app-promise app-refs enjin-proxy-ref-or-delay))) ;; resolve on every deref
+    (delay
+     (resolve-and-merge-refs app-promise app-refs enjin-proxy-ref-or-delay)))) ;; resolve once
+
+(defn- dependent-enjin-proxies
   "given a map of dependent enjins, each either a Delay or an ApplicationRefResolver,
-   ruturn a map of IDeref instance which yield the target"
+   ruturn a map of IDeref instance which yieldb the target"
   [app-promise app-refs enjin-proxy-ref-or-delays]
   (->> enjin-proxy-ref-or-delays
        (map (fn [[id enjin-proxy-ref-or-delay]]
-              [id
-               (if (instance? ApplicationRefResolver enjin-proxy-ref-or-delay)
-                 (util/ideref-clojure
-                  (fn []
-                    (let [resolved @enjin-proxy-ref-or-delay]
-                      (if resolved
-                        (map->enjin-fixref-proxy
-                         {:application-promise* app-promise
-                          :app-refs* (util/merge-check-disjoint app-refs (:app-refs* @enjin-proxy-ref-or-delay))
-                          :enjin* (:enjin* @enjin-proxy-ref-or-delay)
-                          :enjin-proxies* (:enjin-proxies* resolved)}))))) ;; create an IDeref which evaluates the resolver on every deref
-                 (delay
-                  (map->enjin-fixref-proxy
-                   {:application-promise* app-promise
-                    :app-refs* (util/merge-check-disjoint app-refs (:app-refs* @enjin-proxy-ref-or-delay))
-                    :enjin* (:enjin* @enjin-proxy-ref-or-delay)
-                    :enjin-proxies* (:enjin-proxies* @enjin-proxy-ref-or-delay)})))]))
+              [id (dependent-enjin-proxy app-promise app-refs enjin-proxy-ref-or-delay)]))
        (into {})))
 
-(defn create-enjin-fixref-proxy
+(defn- create-enjin-fixref-proxy
   [app-promise app-refs enjin]
 
   (let [depenj-proxies (dependent-enjin-proxies app-promise app-refs (:enjins* enjin))]
