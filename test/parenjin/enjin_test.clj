@@ -89,7 +89,11 @@
 
 (fact "enjin should dereference an IPending requirement"
   (let [ds (fsd {:enjins {:foo (delay ..dep-a..)}})]
-    (enjin ds :foo) => ..dep-a..))
+    (enjin ds :foo) => ..dep-a..
+    (provided
+      (model ..dep-a..) => ..dep-a-model..
+      (#'enj/check-enjin-type :foo nil nil) => true))
+  )
 
 (fact "create-webservice should create some compojure routes"
   (let [ds (fsd {:webservices {:foo (fn [enjin] enjin =not=> nil ..webservice..)}})]

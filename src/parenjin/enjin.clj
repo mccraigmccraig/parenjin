@@ -114,6 +114,12 @@
     (with-enjin enjin
       (apply handler params))))
 
+(defn- check-enjin-type
+  [enjin-id req-type enj-type]
+  (if-not (= req-type enj-type)
+    (throw (RuntimeException. (<< "enjin <~{enjin-id}> is of type <~{enj-type}> but is required to be of type <~{req-type}>"))))
+  true)
+
 (defrecord-openly simple-enjin [model* application-promise* params* connectors* enjins* webservices* jobs* running-jobs*]
   Enjin
   (model [this] model*)
@@ -132,11 +138,10 @@
   (enjins [this] enjins*)
   (enjin [this id]
     (let [req-type (get-in model* [:enjin-reqs id])
-          ds (util/deref-if-deref (enjins* id))
-          ds-type (get-in ds [:model* :model-type])]
-      (if-not (= req-type ds-type)
-        (throw (RuntimeException. (<< "enjin <~{id}> is of type <~{ds-type}> but is required to be of type <~{req-type}>"))))
-      ds))
+          enj (util/deref-if-deref (enjins* id))
+          enj-type (get-in (model enj) [:model-type])]
+      (check-enjin-type id req-type enj-type)
+      enj))
 
   (webservices [this] webservices*)
   (create-webservice [this webservice-id] ((webservices* webservice-id) this))
@@ -223,28 +228,6 @@
 
     (map->enjin-fixref-proxy {:enjin* enj :application-promise* application-promise :app-refs* fixed-app-refs})))
 
-;; limit the depth to which a enjin will print, avoiding
-;; blowing the stack when circular references are used
-(defn- print-enjin
-  [enjin writer]
-  (let [m (->> (keys enjin)
-               (map (fn [k] [k (k enjin)]))
-               (into {}))]
-    (.write writer "#")
-    (.write writer (.getName simple-enjin))
-    (if-not *print-level*
-      (binding [*print-level* 3]
-        (#'clojure.core/pr-on m writer))
-      (#'clojure.core/pr-on m writer))))
-
-(defmethod print-method simple-enjin
-  [enjin writer]
-  (print-enjin enjin writer))
-
-(defmethod print-dup simple-enjin
-  [enjin writer]
-  (print-enjin enjin writer))
-
 (defn with-params*
   "call function f after binding app references for the enjin"
   [enjin the-params f]
@@ -256,3 +239,33 @@
   "wrap forms in a lambda after binding app references for the enjin"
   [enjin the-params & forms]
   `(with-params* ~enjin ~the-params (fn [] ~@forms)))
+
+;; limit the depth to which a enjin will print, avoiding
+;; blowing the stack when circular references are used
+(defn- print-enjin
+  [enjin writer]
+  (let [m (->> (keys enjin)
+               (map (fn [k] [k (k enjin)]))
+               (into {}))]
+    (.write writer "#")
+    (.write writer (.getName (type enjin)))
+    (if-not *print-level*
+      (binding [*print-level* 3]
+        (#'clojure.core/pr-on m writer))
+      (#'clojure.core/pr-on m writer))))
+
+(defmethod print-method simple-enjin
+  [enjin writer]
+  (print-enjin enjin writer))
+
+(defmethod print-method enjin-fixref-proxy
+  [enjin writer]
+  (print-enjin enjin writer))
+
+(defmethod print-dup simple-enjin
+  [enjin writer]
+  (print-enjin enjin writer))
+
+(defmethod print-dup enjin-fixref-proxy
+  [enjin writer]
+  (print-enjin enjin writer))

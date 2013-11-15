@@ -4,6 +4,7 @@
         clojure.core.strint)
   (:require [parenjin.application-proxy :as aproxy]
             [clojure.set :as set]
+            [clojure.tools.logging :as log]
             [parenjin.util :as util])
   (:import [parenjin.application_proxy ApplicationProxy]))
 
@@ -47,6 +48,7 @@
 ;; ref-resolver is an IDeref which looks up an application variable (when @/deref'ed)
 
 (defprotocol ApplicationRefResolver
+  (get-app-promise [this])
   (get-ref-name [this]))
 
 (defn ref-resolver
@@ -63,6 +65,7 @@
           (resolve-ref app (ref-name ref))))
 
       ApplicationRefResolver
+      (get-app-promise [this] app-promise)
       (get-ref-name [this] (ref-name ref))))
 
 (defn- unwrap-application
