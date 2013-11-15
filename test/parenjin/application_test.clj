@@ -198,11 +198,10 @@
                                           b (app/enjin app :B)]
                                       ?form))]
   (fact "application should allow fixing of params to application-refs across enjin dependency links"
-;;      (enj/param a :a-param) => "blah"
-      ;; (-> a
-      ;;     (enj/enjin :some-bars)
-      ;;     (enj/param :another-param)) => "blah"
-          ))
+      (enj/param a :a-param) => "blah"
+      (-> a
+          (enj/enjin :some-bars)
+          (enj/param :another-param)) => "blah"))
 
 (def o (-> (enjm/create-enjin-model :foos)
            (enjm/requires-enjin :some-bars :bars)))
