@@ -147,7 +147,7 @@
                   :params {:param-a ..param-a.. :param-b ..param-b..}
                   :connectors {:conn-a ..conn-a.. :conn-b ..conn-b..}
                   :enjins {:ds-a ..ds-a.. :ds-b ..ds-b..})
-    => {:enjin* ..ds.. :application-promise* ..promise.. :app-refs* {}}
+    => {:application-promise* ..promise.. :app-refs* {} :enjin* ..ds.. :enjin-proxies* {}}
 
     (provided
       (enjm/persist-model m) => pmodel
@@ -178,7 +178,7 @@
                   :params params
                   :connectors {}
                   :enjins enjins)
-    => {:enjin* ..ds.. :application-promise* ..promise.. :app-refs* {:param-a-ref "100" :enjin-a-ref ..enjin-a-delay..}}
+    => {:application-promise* ..promise.. :app-refs* {:param-a-ref "100" :enjin-a-ref ..enjin-a-delay..} :enjin* ..ds.. :enjin-proxies* {}}
 
     (provided
       (enjm/persist-model m) => pmodel

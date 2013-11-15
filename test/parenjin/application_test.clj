@@ -203,6 +203,27 @@
           (enj/enjin :some-bars)
           (enj/param :another-param)) => "blah"))
 
+(def s (-> (enjm/create-enjin-model :foos)
+           (enjm/requires-enjin :some-bars :bars)
+           (enjm/requires-enjin :some-bazs :bazs)))
+(def t (-> (enjm/create-enjin-model :bars)
+           (enjm/requires-enjin :some-bazs :bazs)))
+(def u (-> (enjm/create-enjin-model :bazs)))
+(def app-fix-enjin-ref-enjin-dep-spec {:enjins {:A {:model s
+                                                    :enjins {:some-bars :B
+                                                             :some-bazs #app/fix-ref [:enj-ref :C]}}
+                                                :B {:model t
+                                                    :enjins {:some-bazs #app/ref :enj-ref }}
+                                                :C {:model u}}})
+(with-state-changes [(around :facts (let [app (#'app/create-application* {} app-fix-enjin-ref-enjin-dep-spec)
+                                          a (app/enjin app :A)
+                                          b (app/enjin app :B)
+                                          c (app/enjin app :C)]
+                                      ?form))]
+  (fact "application should allow fixing of enjins to application-refs across enjin dependency links"
+    (-> a (enj/enjin :some-bars) :enjin*) => (:enjin* b)
+))
+
 (def o (-> (enjm/create-enjin-model :foos)
            (enjm/requires-enjin :some-bars :bars)))
 

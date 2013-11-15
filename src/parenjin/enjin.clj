@@ -176,10 +176,6 @@
                       :jobs* (or jobs {})
                       :running-jobs* (ref {})}))
 
-(defprotocol EnjinFixrefProxy
-  (merge-fixrefs [this other]
-    "return a new EnjinFixrefProxy with the same target as other, but with this's fixrefs merged in"))
-
 (defn- with-fixref-proxy-app-refs*
   [fixref-proxy f]
   (aref/with-app-refs*
@@ -192,18 +188,18 @@
   `(with-fixref-proxy-app-refs* ~fixref-proxy (fn [] ~@forms)))
 
 ;; enjin-fixref-proxy sets any fixed app-refs before proxying to an enjin implementation
-(defrecord-openly enjin-fixref-proxy [enjin* application-promise* app-refs*]
+(defrecord-openly enjin-fixref-proxy [enjin* application-promise* app-refs* enjin-proxies*]
   Enjin
-  (model [this] (model enjin*))
-  (application [this] (application enjin*))
+  (model [this] (model (util/deref-if-deref enjin*)))
+  (application [this] (application (util/deref-if-deref enjin*)))
 
-  (params [this] (with-fixref-proxy-app-refs this (params enjin*)))
-  (param [this name] (with-fixref-proxy-app-refs this (param enjin* name)))
+  (params [this] (with-fixref-proxy-app-refs this (params (util/deref-if-deref enjin*))))
+  (param [this name] (with-fixref-proxy-app-refs this (param (util/deref-if-deref enjin*) name)))
 
-  (connectors [this] (with-fixref-proxy-app-refs this (connectors enjin*)))
-  (connector [this id] (with-fixref-proxy-app-refs this (connector enjin* id)))
+  (connectors [this] (with-fixref-proxy-app-refs this (connectors (util/deref-if-deref enjin*))))
+  (connector [this id] (with-fixref-proxy-app-refs this (connector (util/deref-if-deref enjin*) id)))
 
-  (webservices [this] (with-fixref-proxy-app-refs this (webservices enjin*)))
+  (webservices [this] (with-fixref-proxy-app-refs this (webservices (util/deref-if-deref enjin*))))
   (create-webservice [this webservice-id]
     (with-fixref-proxy-app-refs this
       ((get (webservices this) webservice-id))))
@@ -211,24 +207,37 @@
     (with-fixref-proxy-app-refs this
       (map-over-ids this create-webservice webservice-ids (keys (webservices this)))))
 
-  (jobs [this] (with-fixref-proxy-app-refs this (jobs enjin*)))
-  (start-job [this job-id] (with-fixref-proxy-app-refs this (start-job enjin* job-id)))
-  (start-jobs [this job-ids] (with-fixref-proxy-app-refs this (start-jobs enjin* job-ids)))
-  (job-status [this job-id] (with-fixref-proxy-app-refs this (job-status enjin* job-id)))
-  (stop-job [this job-id] (with-fixref-proxy-app-refs this (stop-job enjin* job-id)))
-  (stop-jobs [this job-ids] (with-fixref-proxy-app-refs this (stop-jobs enjin* job-ids)))
+  (jobs [this] (with-fixref-proxy-app-refs this (jobs (util/deref-if-deref enjin*))))
+  (start-job [this job-id] (with-fixref-proxy-app-refs this (start-job (util/deref-if-deref enjin*) job-id)))
+  (start-jobs [this job-ids] (with-fixref-proxy-app-refs this (start-jobs (util/deref-if-deref enjin*) job-ids)))
+  (job-status [this job-id] (with-fixref-proxy-app-refs this (job-status (util/deref-if-deref enjin*) job-id)))
+  (stop-job [this job-id] (with-fixref-proxy-app-refs this (stop-job (util/deref-if-deref enjin*) job-id)))
+  (stop-jobs [this job-ids] (with-fixref-proxy-app-refs this (stop-jobs (util/deref-if-deref enjin*) job-ids)))
 
-  (enjins [this] (->> (enjins enjin*)
-                      (map (fn [[id proxy]] [id (merge-fixrefs this proxy)]))
-                      (into {})))
-  (enjin [this id] (merge-fixrefs this (enjin enjin* id)))
+  (enjins [this] enjin-proxies*)
+  (enjin [this id] (with-fixref-proxy-app-refs this @(enjin-proxies* id))))
 
-  EnjinFixrefProxy
-  (merge-fixrefs [this other]
-    (map->enjin-fixref-proxy {:application-promise* application-promise*
-                              :enjin* (:enjin* other)
-                              :app-refs* (util/merge-check-disjoint app-refs* (:app-refs* other))})))
+(defn dependent-enjin-proxies
+  [app-promise app-refs enjin-proxy-delays]
+  (->> enjin-proxy-delays
+       (map (fn [[id enjin-proxy-delay]]
+              [id
+               (delay
+                (map->enjin-fixref-proxy
+                 {:application-promise* app-promise
+                  :app-refs* (util/merge-check-disjoint app-refs (:app-refs* @enjin-proxy-delay))
+                  :enjin* (:enjin* @enjin-proxy-delay)
+                  :enjin-proxies* (:enjin-proxies* @enjin-proxy-delay)}))]))
+       (into {})))
 
+(defn create-enjin-fixref-proxy
+  [app-promise app-refs enjin]
+
+  (let [depenj-proxies (dependent-enjin-proxies app-promise app-refs (:enjins* enjin))]
+    (map->enjin-fixref-proxy {:application-promise* app-promise
+                              :app-refs* app-refs
+                              :enjin* enjin
+                              :enjin-proxies* depenj-proxies})))
 
 (def ^:private create-enjin-arg-specs
   {:application-promise true
@@ -259,7 +268,7 @@
                                   :webservices webservices
                                   :jobs jobs)]
 
-    (map->enjin-fixref-proxy {:enjin* enj :application-promise* application-promise :app-refs* fixed-app-refs})))
+    (create-enjin-fixref-proxy application-promise fixed-app-refs enj)))
 
 (defn with-params*
   "call function f after binding app references for the enjin"
