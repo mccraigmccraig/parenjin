@@ -225,7 +225,7 @@
     (-> a (enj/enjin :some-bazs) :enjin*) => (:enjin* c)
 
     (-> a (enj/enjin :some-bars) (enj/enjin :some-bazs) :enjin*) => (:enjin* c)
-    (-> b (enj/enjin :some-bazs)) => nil
+    (-> b (enj/enjin :some-bazs)) => (throws RuntimeException #"required to be.*:bazs")
 ))
 
 (def o (-> (enjm/create-enjin-model :foos)
