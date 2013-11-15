@@ -125,3 +125,11 @@
       (if (reduce #(and %1 %2) (map identical? (map ma shared-keys) (map mb shared-keys)))
         (merge ma mb)
         (throw (RuntimeException. (str (or msg "key clash: ") shared-keys)))))))
+
+(defn ideref-clojure
+  "return an IDefef instance which calls f on each deref"
+  [f]
+  (reify
+    clojure.lang.IDeref
+    (deref [this]
+      (f))))

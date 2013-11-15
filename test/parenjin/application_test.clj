@@ -222,6 +222,10 @@
                                       ?form))]
   (fact "application should allow fixing of enjins to application-refs across enjin dependency links"
     (-> a (enj/enjin :some-bars) :enjin*) => (:enjin* b)
+    (-> a (enj/enjin :some-bazs) :enjin*) => (:enjin* c)
+
+    (-> a (enj/enjin :some-bars) (enj/enjin :some-bazs) :enjin*) => (:enjin* c)
+    (-> b (enj/enjin :some-bazs)) => nil
 ))
 
 (def o (-> (enjm/create-enjin-model :foos)

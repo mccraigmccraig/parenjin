@@ -10,7 +10,8 @@
             [parenjin.enjin-model :as enjm]
             [parenjin.enjin-ref-param :as enjrp]
             [parenjin.application-ref :as aref])
-  (:import [parenjin.enjin_model EnjinModel]))
+  (:import [parenjin.enjin_model EnjinModel]
+           [parenjin.application_ref ApplicationRefResolver]))
 
 (def ^:private check-requirements-arg-specs
   {:model true
@@ -218,16 +219,28 @@
   (enjin [this id] (with-fixref-proxy-app-refs this @(enjin-proxies* id))))
 
 (defn dependent-enjin-proxies
-  [app-promise app-refs enjin-proxy-delays]
-  (->> enjin-proxy-delays
-       (map (fn [[id enjin-proxy-delay]]
+  "given a map of dependent enjins, each either a Delay or an ApplicationRefResolver,
+   ruturn a map of IDeref instance which yield the target"
+  [app-promise app-refs enjin-proxy-ref-or-delays]
+  (->> enjin-proxy-ref-or-delays
+       (map (fn [[id enjin-proxy-ref-or-delay]]
               [id
-               (delay
-                (map->enjin-fixref-proxy
-                 {:application-promise* app-promise
-                  :app-refs* (util/merge-check-disjoint app-refs (:app-refs* @enjin-proxy-delay))
-                  :enjin* (:enjin* @enjin-proxy-delay)
-                  :enjin-proxies* (:enjin-proxies* @enjin-proxy-delay)}))]))
+               (if (instance? ApplicationRefResolver enjin-proxy-ref-or-delay)
+                 (util/ideref-clojure
+                  (fn []
+                    (let [resolved @enjin-proxy-ref-or-delay]
+                      (if resolved
+                        (map->enjin-fixref-proxy
+                         {:application-promise* app-promise
+                          :app-refs* (util/merge-check-disjoint app-refs (:app-refs* @enjin-proxy-ref-or-delay))
+                          :enjin* (:enjin* @enjin-proxy-ref-or-delay)
+                          :enjin-proxies* (:enjin-proxies* resolved)}))))) ;; create an IDeref which evaluates the resolver on every deref
+                 (delay
+                  (map->enjin-fixref-proxy
+                   {:application-promise* app-promise
+                    :app-refs* (util/merge-check-disjoint app-refs (:app-refs* @enjin-proxy-ref-or-delay))
+                    :enjin* (:enjin* @enjin-proxy-ref-or-delay)
+                    :enjin-proxies* (:enjin-proxies* @enjin-proxy-ref-or-delay)})))]))
        (into {})))
 
 (defn create-enjin-fixref-proxy
