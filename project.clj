@@ -9,7 +9,7 @@
     ])
 
 
-(defproject parenjin "0.3.0-SNAPSHOT"
+(defproject parenjin "0.4.0-SNAPSHOT"
   :description "parenjin : Parameterisable Application Engines for Compojure"
 
   :license {:name "Eclipse Public License"
@@ -21,7 +21,7 @@
   :scm {:name "git"
         :url "http://github.com/mccraigmccraig/parenjin"}
 
-  :jvm-opts ["-Xmx1g"
+  :jvm-opts ["-Xmx128m"
              "-server"
              "-XX:MaxPermSize=128m"
              "-XX:+CMSClassUnloadingEnabled"
