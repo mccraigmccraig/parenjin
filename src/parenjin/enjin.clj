@@ -191,16 +191,16 @@
 ;; enjin-fixref-proxy sets any fixed app-refs before proxying to an enjin implementation
 (defrecord-openly enjin-fixref-proxy [enjin* application-promise* app-refs* enjin-proxies*]
   Enjin
-  (model [this] (model (util/deref-if-deref enjin*)))
-  (application [this] (application (util/deref-if-deref enjin*)))
+  (model [this] (model enjin*))
+  (application [this] (application enjin*))
 
-  (params [this] (with-fixref-proxy-app-refs this (params (util/deref-if-deref enjin*))))
-  (param [this name] (with-fixref-proxy-app-refs this (param (util/deref-if-deref enjin*) name)))
+  (params [this] (with-fixref-proxy-app-refs this (params enjin*)))
+  (param [this name] (with-fixref-proxy-app-refs this (param enjin* name)))
 
-  (connectors [this] (with-fixref-proxy-app-refs this (connectors (util/deref-if-deref enjin*))))
-  (connector [this id] (with-fixref-proxy-app-refs this (connector (util/deref-if-deref enjin*) id)))
+  (connectors [this] (with-fixref-proxy-app-refs this (connectors enjin*)))
+  (connector [this id] (with-fixref-proxy-app-refs this (connector enjin* id)))
 
-  (webservices [this] (with-fixref-proxy-app-refs this (webservices (util/deref-if-deref enjin*))))
+  (webservices [this] (with-fixref-proxy-app-refs this (webservices enjin*)))
   (create-webservice [this webservice-id]
     (with-fixref-proxy-app-refs this
       ((get (webservices this) webservice-id))))
@@ -208,12 +208,12 @@
     (with-fixref-proxy-app-refs this
       (map-over-ids this create-webservice webservice-ids (keys (webservices this)))))
 
-  (jobs [this] (with-fixref-proxy-app-refs this (jobs (util/deref-if-deref enjin*))))
-  (start-job [this job-id] (with-fixref-proxy-app-refs this (start-job (util/deref-if-deref enjin*) job-id)))
-  (start-jobs [this job-ids] (with-fixref-proxy-app-refs this (start-jobs (util/deref-if-deref enjin*) job-ids)))
-  (job-status [this job-id] (with-fixref-proxy-app-refs this (job-status (util/deref-if-deref enjin*) job-id)))
-  (stop-job [this job-id] (with-fixref-proxy-app-refs this (stop-job (util/deref-if-deref enjin*) job-id)))
-  (stop-jobs [this job-ids] (with-fixref-proxy-app-refs this (stop-jobs (util/deref-if-deref enjin*) job-ids)))
+  (jobs [this] (with-fixref-proxy-app-refs this (jobs enjin*)))
+  (start-job [this job-id] (with-fixref-proxy-app-refs this (start-job enjin* job-id)))
+  (start-jobs [this job-ids] (with-fixref-proxy-app-refs this (start-jobs enjin* job-ids)))
+  (job-status [this job-id] (with-fixref-proxy-app-refs this (job-status enjin* job-id)))
+  (stop-job [this job-id] (with-fixref-proxy-app-refs this (stop-job enjin* job-id)))
+  (stop-jobs [this job-ids] (with-fixref-proxy-app-refs this (stop-jobs enjin* job-ids)))
 
   (enjins [this] enjin-proxies*)
   (enjin [this id] @(enjin-proxies* id)))
