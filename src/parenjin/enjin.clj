@@ -232,7 +232,8 @@
          {:application-promise* app-promise
           :app-refs* (util/merge-check-disjoint app-refs (:app-refs* resolved))
           :enjin* (:enjin* resolved)
-          :enjin-proxies* (dependent-enjin-proxies pmodel app-promise app-refs (:enjin-proxies* resolved))})))))
+          :enjin-proxies* (dependent-enjin-proxies pmodel app-promise app-refs (:enjin-proxies* resolved))}))
+      (check-enjin-type id req-type nil))))
 
 (defn- dependent-enjin-proxy
   "different strategies for dependent enjin proxy merging... if it's a plain reference, then do it once,
