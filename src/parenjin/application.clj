@@ -4,6 +4,7 @@
         potemkin)
   (:require [compojure.core :as compojure]
             [parenjin.util :as util]
+            [parenjin.job :as job]
             [parenjin.enjin :as enj]
             [parenjin.enjin-model :as dsm]
             [parenjin.application-proxy :as aproxy]
@@ -26,7 +27,8 @@
   (enjins [this])
   (enjin [this id])
 
-  (create-web-routes [this]))
+  (create-web-routes [this])
+  (job [this id]))
 
 (defn- create-web-routes*
   "given an app-spec and a bunch of enjins, create a set of compojure routes for the webservices
@@ -39,7 +41,7 @@
                                        (or (:webservices ds-spec) :all))))
          (apply concat))))
 
-(defrecord-openly application [app-spec* web-connector* enjins*]
+(defrecord-openly application [app-spec* web-connector* enjins* jobs*]
   Application
 
   (app-spec [this] app-spec*)
@@ -47,7 +49,8 @@
   (enjins [this] enjins*)
   (enjin [this id] (enjins* id))
 
-  (create-web-routes [this] (create-web-routes* app-spec* enjins*)))
+  (create-web-routes [this] (create-web-routes* app-spec* enjins*))
+  (job [this id] (jobs* id)))
 
 (defn- fixup-enjins
   "replace enjin ids with delays, dealing with ApplicationRef and ApplicationFixRef cases"
@@ -72,8 +75,7 @@
 
   (let [model (-> enjin-spec :model util/resolve-obj)
         connectors (->> enjin-spec :connectors (map (fn [[conn-id reg-id]] [conn-id (get connector-registry reg-id)])) (into {}))
-        use-params (or (:params enjin-spec) {})
-]
+        use-params (or (:params enjin-spec) {})]
     (enj/create-enjin model
                       :application-promise app-promise
                       :params use-params
@@ -99,15 +101,33 @@
                 [key (deref enjin-delay)]))
          (into {}))))
 
+(defn- create-jobs
+  "return a map of lists of job instances, each of which is a single enjin's contribution"
+  [app-spec enjins]
+  (->> (keys enjins)
+       (map (fn [enjin-id] [enjin-id (get app-spec enjin-id) (get enjins enjin-id)]))
+       (map (fn [[enjin-id enjin-spec enjin]]
+
+              (->> (:job-mappings enjin-spec)
+                   (map (fn [[enjin-job-id & app-job-ids]]
+                          (let [use-app-job-ids (flatten app-job-ids)]
+                            (->> use-app-job-ids
+                                 (map (fn [app-job-id]
+                                        [app-job-id [(enj/create-job enjin enjin-job-id)]]))
+                                 (into {})))))
+                   (merge-with concat))))
+       (merge-with concat)))
+
 (defn- create-application*
   "create an application given an application specification"
   [connectors app-spec]
   (let [app-promise (promise)
         enjins (create-enjins connectors app-promise app-spec)
+        jobs (create-jobs app-spec enjins)
         application (map->application {:app-spec* app-spec
-                                       :enjins* enjins})]
+                                       :enjins* enjins
+                                       :jobs* jobs})]
     (deliver app-promise application)
-
     application))
 
 (defn- create-webservice*
