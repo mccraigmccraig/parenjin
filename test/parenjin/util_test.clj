@@ -82,58 +82,6 @@
   (let [f (future (do (Thread/sleep 100) 1))]
     (future-status f) => :running))
 
-(with-state-changes [(around :facts (let [trackref (ref {})
-                                             result (promise)]
-                                         ?form ))]
-  (fact "start-or-noop should start a never started task"
-    (start-or-noop ..enjin.. trackref {:foo (fn [this] this => ..enjin.. (deliver result true) (Thread/sleep 100))} :foo) => :running
-    @result => true))
-
-(with-state-changes [(around :facts (let [trackref (ref {:foo (future (Thread/sleep 100) ..result..)})
-                                             result (promise)]
-                                         ?form ))]
-  (fact "start-or-noop should do nothing to a running task"
-    (start-or-noop ..enjin.. trackref {:foo (fn [this] this => ..enjin.. (deliver result true) (Thread/sleep 100))} :foo) => :running
-    (deref result 100 ..nocall..) => ..nocall..))
-
-(with-state-changes [(around :facts (let [b (promise)
-                                             trackref (ref {:foo (future (deliver b true) ..before-result..)})
-                                             a (promise)]
-                                         ?form ))]
-  (fact "start-or-noop should start a stopped task"
-    @b => true
-    (start-or-noop ..enjin.. trackref {:foo (fn [this] this => ..enjin.. (deliver a ..running..) (Thread/sleep 100) ..after-result..)} :foo) => :running
-    @a => ..running..
-    (-> trackref deref :foo deref) => ..after-result..))
-
-(with-state-changes [(around :facts (let [trackref (ref {})]
-                                         ?form ))]
-  (fact "stop-or-noop should do nothing to a never started task"
-    (stop-or-noop ..enjin.. trackref :foo) => :none
-    (-> trackref deref :foo) => nil))
-
-(with-state-changes [(around :facts (let [trackref (ref {:foo (future (Thread/sleep 100) ..result..)})]
-                                         ?form ))]
-  (fact "stop-or-noop should stop a running task"
-    (stop-or-noop ..enjin.. trackref :foo) => :stopped
-    (-> trackref deref :foo deref) => (throws CancellationException)))
-
-(with-state-changes [(around :facts (let [trackref (ref {:foo (future ..result..)})]
-                                         ?form ))]
-  (fact "stop-or-noop should do nothing to a stopped task"
-    (-> trackref deref :foo deref) => ..result..
-    (stop-or-noop ..enjin.. trackref :foo) => :stopped))
-
-(with-state-changes [(around :facts (let [trackref (ref {:foo (delay ..result..)})]
-                                         ?form ))]
-  (fact "join-or-noop should deref an existing task's future"
-    (join-or-noop ..enjin.. trackref :foo) => ..result..))
-
-(with-state-changes [(around :facts (let [trackref (ref {})]
-                                         ?form ))]
-  (fact "join-or-noop should do nothing to a never-started task"
-    (join-or-noop ..enjin.. trackref :foo) => nil))
-
 (fact "merge-check-disjoint should merge two maps with disjoint keys"
   (merge-check-disjoint {:foo 10} {:bar 20}) => {:foo 10 :bar 20})
 

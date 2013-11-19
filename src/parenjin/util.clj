@@ -97,33 +97,6 @@
         f :stopped
         true :none))
 
-(defn start-or-noop
-  "if it's not running call (defs id) in a future and retain the future in <trackref>"
-  [enjin trackref defs id]
-  (dosync
-   (let [f ((ensure trackref) id)]
-     (if (or (not f) (realized? f))
-       (ref-set trackref
-                (assoc @trackref id
-                       (future ((defs id) enjin)))))))
-  (future-status (@trackref id)))
-
-(defn stop-or-noop
-  "if it is running, stop the future in (@trackref id)"
-  [enjin trackref id]
-  (dosync
-   (if-let [f ((ensure trackref) id)]
-     (future-cancel f)))
-  (future-status (@trackref id)))
-
-(defn join-or-noop
-  "do a blocking deref of a job future, if it's running"
-  [enjin trackref id]
-  (-?> trackref
-       deref
-       id
-       deref))
-
 (defn merge-check-disjoint
   "merge two maps, throwing an exception if their keysets are not disjoint and values
    relating to the intersecting keys are different"
