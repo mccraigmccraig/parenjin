@@ -124,6 +124,16 @@
     (-> trackref deref :foo deref) => ..result..
     (stop-or-noop ..enjin.. trackref :foo) => :stopped))
 
+(with-state-changes [(around :facts (let [trackref (ref {:foo (delay ..result..)})]
+                                         ?form ))]
+  (fact "join-or-noop should deref an existing task's future"
+    (join-or-noop ..enjin.. trackref :foo) => ..result..))
+
+(with-state-changes [(around :facts (let [trackref (ref {})]
+                                         ?form ))]
+  (fact "join-or-noop should do nothing to a never-started task"
+    (join-or-noop ..enjin.. trackref :foo) => nil))
+
 (fact "merge-check-disjoint should merge two maps with disjoint keys"
   (merge-check-disjoint {:foo 10} {:bar 20}) => {:foo 10 :bar 20})
 

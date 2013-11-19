@@ -1,5 +1,6 @@
 (ns parenjin.util
-  (:use clojure.core.strint)
+  (:use clojure.core.strint
+        clojure.core.incubator)
   (:require [clojure.set :as set]))
 
 (defn derefable?
@@ -114,6 +115,14 @@
    (if-let [f ((ensure trackref) id)]
      (future-cancel f)))
   (future-status (@trackref id)))
+
+(defn join-or-noop
+  "do a blocking deref of a job future, if it's running"
+  [enjin trackref id]
+  (-?> trackref
+       deref
+       id
+       deref))
 
 (defn merge-check-disjoint
   "merge two maps, throwing an exception if their keysets are not disjoint and values
