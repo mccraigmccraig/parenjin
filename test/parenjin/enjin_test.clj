@@ -4,6 +4,7 @@
   (:require [parenjin.enjin-ref-param :as enjrp]
             [parenjin.application-ref :as aref]
             [parenjin.enjin :as enj]
+            [parenjin.job :as job]
             [parenjin.enjin-model :as enjm]
             [parenjin.util :as util]
             [compojure.core :as compojure]))
@@ -104,37 +105,16 @@
                                :bar (fn [enjin] enjin =not=> nil ..bar-webservice..)}})]
     (create-webservices ds [:foo :bar]) => [..foo-webservice.. ..bar-webservice..]))
 
-(fact "start-job should start a job"
-  (let [ds (fsd)
-        rj (:running-jobs* ds)]
-    (start-job ds :foo) => ..started..
+(with-state-changes [(around :facts (let [ds (fsd {:jobs {:foo ..foo-job-fn.. :bar ..bar-job-fn..}})]
+                                      ?form))]
+  (fact "create-job should create a job instance"
+    (create-job ds :foo) => ..foo-job..
     (provided
-      (util/start-or-noop ds rj ..jobs.. :foo) => ..started..)))
+      (job/create-job ds ..foo-job-fn..) => ..foo-job..)
 
-(fact "start-jobs should start some jobs"
-  (let [ds (fsd {:jobs {:foo ..foo-job.. :bar ..bar-job.. :baz ..baz-job..}})]
-    (start-jobs ds [:foo :bar]) => ..started..
+    (create-job ds :bar) => ..bar-job..
     (provided
-      (#'enj/map-over-ids ds start-job [:foo :bar] [:foo :bar :baz]) => ..started..)))
-
-(fact "job-status should return the status of a job"
-  (let [ds (fsd {:running-jobs {:foo ..foo-future..}})]
-    (job-status ds :foo) => ..foo-status..
-    (provided
-      (util/future-status ..foo-future..) => ..foo-status..)))
-
-(fact "stop-job should stop a job"
-  (let [ds (fsd)
-        rj (:running-jobs* ds)]
-    (stop-job ds :foo) => ..stopped..
-    (provided
-      (util/stop-or-noop ds rj :foo) => ..stopped..)))
-
-(fact "stop-jobs should stop some jobs"
-  (let [ds (fsd {:jobs {:foo ..foo-job.. :bar ..bar-job.. :baz ..baz-job..}})]
-    (stop-jobs ds [:foo :bar]) => ..stopped..
-    (provided
-      (#'enj/map-over-ids ds stop-job [:foo :bar] [:foo :bar :baz]) => ..stopped..)))
+      (job/create-job ds ..bar-job-fn..) => ..bar-job..)))
 
 (fact "create-enjin should create a enjin from the supplied requirement-resolutions"
   (let [m (enjm/create-enjin-model :foo)
@@ -157,7 +137,7 @@
                                   :connectors {:conn-a ..conn-a.. :conn-b ..conn-b..}
                                   :enjins {:ds-a ..ds-a.. :ds-b ..ds-b..}
                                   :webservices {:ws-a ..ws-a.. :ws-b ..ws-b..}
-                                  :jobs {:job-a ..job-a.. :job-b ..job-b..}) => ..ds..)))
+                                  :jobs {}) => ..ds..)))
 
 (fact "create-enjin should store any fixed app-refs in the proxy"
   (let [m (enjm/create-enjin-model :foo)
@@ -178,11 +158,13 @@
                   :params params
                   :connectors {}
                   :enjins enjins)
-    => {:application-promise* ..promise.. :app-refs* {:param-a-ref "100" :enjin-a-ref ..enjin-a-delay..} :enjin* ..ds.. :enjin-proxies* {}}
+    => {:application-promise* ..promise..
+        :app-refs* {:param-a-ref "100" :enjin-a-ref ..enjin-a-delay..}
+        :enjin* ..ds..
+        :enjin-proxies* {}}
 
     (provided
       (enjm/persist-model m) => pmodel
-
       (enjrp/literal-or-resolver-values ..promise.. params) => {:param-a ..param-a-ref-resolver..
                                                                 :param-b ..param-b-ref-resolver..
                                                                 :param-c ..param-c..}

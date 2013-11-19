@@ -12,12 +12,12 @@
 
 (defn start-or-noop
   "if it's not running call (defs id) in a future and retain the future in <trackref>"
-  [enjin-promise track-ref job-fn]
+  [enjin track-ref job-fn]
   (dosync
    (let [f (ensure track-ref)]
      (if (or (not f) (realized? f))
        (ref-set track-ref
-                (future (job-fn @enjin-promise))))))
+                (future (job-fn enjin))))))
   (util/future-status @track-ref))
 
 (defn stop-or-noop
@@ -42,5 +42,5 @@
   (join [this] (join-or-noop track-ref*)))
 
 (defn create-job
-  [enjin-promise job-fn]
-  (map->job {:enjin-promise* enjin-promise (ref nil) job-fn}))
+  [enjin job-fn]
+  (map->job {:enjin-promise* enjin (ref nil) job-fn}))

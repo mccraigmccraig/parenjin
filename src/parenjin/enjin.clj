@@ -7,6 +7,7 @@
   (:require [clojure.set :as set]
             [compojure.core :as compojure]
             [parenjin.util :as util]
+            [parenjin.job :as job]
             [parenjin.enjin-model :as enjm]
             [parenjin.enjin-ref-param :as enjrp]
             [parenjin.application-ref :as aref])
@@ -81,16 +82,8 @@
 
   (jobs [this]
     "the jobs defined on the Enjin")
-  (start-job [this job-id]
-    "start the job with id <job-id>")
-  (start-jobs [this job-ids]
-    "start jobs with ids <job-ids>, which may be a list of ids or :all")
-  (job-status [this job-id]
-    "fetch the status of job with id <job-id>")
-  (stop-job [this job-id]
-    "stop the job with id <job-id>")
-  (stop-jobs [this job-ids]
-    "stop jobs with ids <job-ids>, which may be a list of ids or :all"))
+  (create-job [this id]
+    "get the job by id"))
 
 (def ^:private ^:dynamic *current-enjin* nil)
 
@@ -122,7 +115,7 @@
     (throw (RuntimeException. (<< "enjin <~{enjin-id}> is of type <~{enj-type}> but is required to be of type <~{req-type}>"))))
   true)
 
-(defrecord-openly simple-enjin [model* application-promise* params* connectors* enjins* webservices* jobs* running-jobs*]
+(defrecord-openly simple-enjin [model* application-promise* params* connectors* enjins* webservices* jobs*]
   Enjin
   (model [this] model*)
 
@@ -150,11 +143,7 @@
   (create-webservices [this webservice-ids] (map-over-ids this create-webservice webservice-ids (keys webservices*)))
 
   (jobs [this] jobs*)
-  (start-job [this job-id] (util/start-or-noop this running-jobs* jobs* job-id))
-  (start-jobs [this job-ids] (map-over-ids this start-job job-ids (keys jobs*)))
-  (job-status [this job-id] (util/future-status (@running-jobs* job-id)))
-  (stop-job [this job-id] (util/stop-or-noop this running-jobs* job-id))
-  (stop-jobs [this job-ids] (map-over-ids this stop-job job-ids (keys jobs*))))
+  (create-job [this id] (job/create-job this (jobs* id))))
 
 (defn- create-simple-enjin*
   [& {:keys [model application-promise params connectors enjins webservices jobs]}]
@@ -174,8 +163,7 @@
                       :connectors* (or connectors {})
                       :enjins* (or enjins {})
                       :webservices* (or webservices {})
-                      :jobs* (or jobs {})
-                      :running-jobs* (ref {})}))
+                      :jobs* jobs}))
 
 (defn- with-fixref-proxy-app-refs*
   [fixref-proxy f]
@@ -209,11 +197,7 @@
       (map-over-ids this create-webservice webservice-ids (keys (webservices this)))))
 
   (jobs [this] (with-fixref-proxy-app-refs this (jobs enjin*)))
-  (start-job [this job-id] (with-fixref-proxy-app-refs this (start-job enjin* job-id)))
-  (start-jobs [this job-ids] (with-fixref-proxy-app-refs this (start-jobs enjin* job-ids)))
-  (job-status [this job-id] (with-fixref-proxy-app-refs this (job-status enjin* job-id)))
-  (stop-job [this job-id] (with-fixref-proxy-app-refs this (stop-job enjin* job-id)))
-  (stop-jobs [this job-ids] (with-fixref-proxy-app-refs this (stop-jobs enjin* job-ids)))
+  (create-job [this id] (job/create-job this (get (jobs this) id)))
 
   (enjins [this] enjin-proxies*)
   (enjin [this id] @(enjin-proxies* id)))
@@ -283,14 +267,13 @@
 
         pmodel (enjm/persist-model model)
         webservices (:webservices pmodel)
-        jobs (:jobs pmodel)
         enj (create-simple-enjin* :model pmodel
                                   :application-promise application-promise
                                   :params literal-or-resolver-params
                                   :connectors connectors
                                   :enjins literal-or-resolver-enjins
                                   :webservices webservices
-                                  :jobs jobs)]
+                                  :jobs {})]
 
     (create-enjin-fixref-proxy pmodel application-promise fixed-app-refs enj)))
 
