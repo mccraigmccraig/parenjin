@@ -130,28 +130,6 @@
     (-> foosB :enjin* :enjins* :other-foos deref) => foosA))
 
 
-(with-state-changes [(around :facts (let [spec {:enjins {:foo {:job-mappings {:foojob1 :dostuff
-                                                                              :foojob2 [:dostuff :dootherstuff]}}
-                                                         :bar {:job-mappings {:barjob1 :dootherstuff
-                                                                              :barjob2 :dootherstuff}}}}
-                                          enjins {:foo ..foo-enjin..
-                                                  :bar ..bar-enjin..}]
-                                      ?form))]
-  (fact "create-jobs should create a map of lists of job instances"
-    (-> (#'app/create-jobs spec enjins) :dostuff set) => (set [..foojob1.. ..foojob2..])
-    (provided
-      (enj/create-job ..foo-enjin.. :foojob1) => ..foojob1..
-      (enj/create-job ..foo-enjin.. :foojob2) => ..foojob2..
-      (enj/create-job ..bar-enjin.. :barjob1) => ..barjob1..
-      (enj/create-job ..bar-enjin.. :barjob2) => ..barjob2..)
-
-    (-> (#'app/create-jobs spec enjins) :dootherstuff set) => (set [..foojob2.. ..barjob1.. ..barjob2..])
-    (provided
-      (enj/create-job ..foo-enjin.. :foojob1) => ..foojob1..
-      (enj/create-job ..foo-enjin.. :foojob2) => ..foojob2..
-      (enj/create-job ..bar-enjin.. :barjob1) => ..barjob1..
-      (enj/create-job ..bar-enjin.. :barjob2) => ..barjob2..)))
-
 (fact "create-application-job should assemble a list of enjin jobs"
   (#'app/create-application-job {:foo ..foo-enjin.. :bar ..bar-enjin..} [[:foo :foojob1] [:bar :barjob1]]) =>
   [..foojob1.. ..barjob1..]
