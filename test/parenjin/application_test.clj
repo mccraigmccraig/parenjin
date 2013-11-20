@@ -130,23 +130,65 @@
     (-> foosB :enjin* :enjins* :other-foos deref) => foosA))
 
 
+(with-state-changes [(around :facts (let [spec {:enjins {:foo {:job-mappings {:foojob1 :dostuff
+                                                                              :foojob2 [:dostuff :dootherstuff]}}
+                                                         :bar {:job-mappings {:barjob1 :dootherstuff
+                                                                              :barjob2 :dootherstuff}}}}
+                                          enjins {:foo ..foo-enjin..
+                                                  :bar ..bar-enjin..}]
+                                      ?form))]
+  (fact "create-jobs should create a map of lists of job instances"
+    (-> (#'app/create-jobs spec enjins) :dostuff set) => (set [..foojob1.. ..foojob2..])
+    (provided
+      (enj/create-job ..foo-enjin.. :foojob1) => ..foojob1..
+      (enj/create-job ..foo-enjin.. :foojob2) => ..foojob2..
+      (enj/create-job ..bar-enjin.. :barjob1) => ..barjob1..
+      (enj/create-job ..bar-enjin.. :barjob2) => ..barjob2..)
+
+    (-> (#'app/create-jobs spec enjins) :dootherstuff set) => (set [..foojob2.. ..barjob1.. ..barjob2..])
+    (provided
+      (enj/create-job ..foo-enjin.. :foojob1) => ..foojob1..
+      (enj/create-job ..foo-enjin.. :foojob2) => ..foojob2..
+      (enj/create-job ..bar-enjin.. :barjob1) => ..barjob1..
+      (enj/create-job ..bar-enjin.. :barjob2) => ..barjob2..)))
+
+
 (with-state-changes [(around :facts (let [conn {:aconn ..aconn.. :bconn ..bconn..}
                                           spec {:enjins {:foomsA {:model n
                                                                   :params {:tag "foomsA"}
-                                                                  :webservices [:foo :bar]}
+                                                                  :webservices [:foo :bar]
+                                                                  :job-mappings {:foomsAjob1 :dostuff}}
                                                          :foomsB {:model n
                                                                   :params {:tag "foomsB"}
-                                                                  :webservices [:bar :baz]}}}
+                                                                  :webservices [:bar :baz]
+                                                                  :job-mappings {:foomsBjob1 :otherstuff}}}}
                                           app-promise (promise)
-                                          enjs (#'app/create-enjins conn app-promise spec)]
-
+                                          enjs (#'app/create-enjins conn app-promise spec)
+                                          foomsA (:foomsA enjs)
+                                          foomsB (:foomsB enjs)]
                                       ?form))]
   (fact "create-application* should create an application from a specification"
     (app-spec (#'app/create-application* conn spec)) => spec
-    (enjins (#'app/create-application* conn spec)) => enjs
 
+    (enjins (#'app/create-application* conn spec)) => enjs
     (provided
-      (#'app/create-enjins conn anything spec) => enjs)))
+      (#'app/create-enjins conn anything spec) => enjs)
+
+
+    )
+
+  (fact "create-application* should create jobs"
+    (-> (#'app/create-application* conn spec) (job :dostuff) set) => (set [..foomsAjob1..])
+    (provided
+      (#'app/create-enjins conn anything spec) => enjs
+      (enj/create-job foomsA :foomsAjob1) => ..foomsAjob1..
+      (enj/create-job foomsB :foomsBjob1) => ..foomsBjob1..)
+
+    (-> (#'app/create-application* conn spec) (job :otherstuff) set) => (set [..foomsBjob1..])
+    (provided
+      (#'app/create-enjins conn anything spec) => enjs
+      (enj/create-job foomsA :foomsAjob1) => ..foomsAjob1..
+      (enj/create-job foomsB :foomsBjob1) => ..foomsBjob1..)))
 
 
 (def app-param-ref-spec {:enjins {:A {:model n

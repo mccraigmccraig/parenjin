@@ -105,7 +105,7 @@
   "return a map of lists of job instances, each of which is a single enjin's contribution"
   [app-spec enjins]
   (->> (keys enjins)
-       (map (fn [enjin-id] [enjin-id (get app-spec enjin-id) (get enjins enjin-id)]))
+       (map (fn [enjin-id] [enjin-id (get-in app-spec [:enjins enjin-id]) (get enjins enjin-id)]))
        (map (fn [[enjin-id enjin-spec enjin]]
 
               (->> (:job-mappings enjin-spec)
@@ -113,10 +113,10 @@
                           (let [use-app-job-ids (flatten app-job-ids)]
                             (->> use-app-job-ids
                                  (map (fn [app-job-id]
-                                        [app-job-id [(enj/create-job enjin enjin-job-id)]]))
-                                 (into {})))))
-                   (merge-with concat))))
-       (merge-with concat)))
+                                        {app-job-id [(enj/create-job enjin enjin-job-id)]}))
+                                 (apply merge-with concat)))))
+                   (apply merge-with concat))))
+       (apply merge-with concat)))
 
 (defn- create-application*
   "create an application given an application specification"
@@ -150,6 +150,7 @@
   (enjin [this id] (enjin (create this) id))
 
   (create-web-routes [this] (create-web-routes (create this)))
+  (job [this id] (job app* id))
 
   ApplicationProxy
 
