@@ -1,5 +1,6 @@
 (ns parenjin.application
-  (:use midje.sweet
+  (:use clojure.core.strint
+        midje.sweet
         midje.open-protocols
         potemkin)
   (:require [compojure.core :as compojure]
@@ -101,29 +102,29 @@
                 [key (deref enjin-delay)]))
          (into {}))))
 
-(defn- create-jobs
-  "return a map of lists of job instances, each of which is a single enjin's contribution"
-  [app-spec enjins]
-  (->> (keys enjins)
-       (map (fn [enjin-id] [enjin-id (get-in app-spec [:enjins enjin-id]) (get enjins enjin-id)]))
-       (map (fn [[enjin-id enjin-spec enjin]]
+(defn- create-application-job
+  [enjins enjin-jobs]
+  (->> enjin-jobs
+       (map (fn [[enjin-id job-id]]
+              (let [enjin (enjins enjin-id)
+                    _ (if-not enjin (throw (RuntimeException. (<< "application jobs reference non-existent enjin: ~{enjin-id}"))))
+                    job (enj/create-job enjin job-id)
+                    _ (if-not job (throw (RuntimeException. (<< "application jobs reference non-existent job: ~{enjin-id}.~{job-id}"))))]
+                job)))
+       (into [])))
 
-              (->> (:job-mappings enjin-spec)
-                   (map (fn [[enjin-job-id & app-job-ids]]
-                          (let [use-app-job-ids (flatten app-job-ids)]
-                            (->> use-app-job-ids
-                                 (map (fn [app-job-id]
-                                        {app-job-id [(enj/create-job enjin enjin-job-id)]}))
-                                 (apply merge-with concat)))))
-                   (apply merge-with concat))))
-       (apply merge-with concat)))
+(defn- create-application-jobs
+  [enjins app-spec]
+  (->> (:jobs app-spec)
+       (map (fn [[job-id enjin-jobs]] [job-id (create-application-job enjins enjin-jobs)]))
+       (into {})))
 
 (defn- create-application*
   "create an application given an application specification"
   [connectors app-spec]
   (let [app-promise (promise)
         enjins (create-enjins connectors app-promise app-spec)
-        jobs (create-jobs app-spec enjins)
+        jobs (create-application-jobs enjins app-spec)
         application (map->application {:app-spec* app-spec
                                        :enjins* enjins
                                        :jobs* jobs})]
