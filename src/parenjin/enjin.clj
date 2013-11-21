@@ -294,14 +294,14 @@
 ;; limit the depth to which a enjin will print, avoiding
 ;; blowing the stack when circular references are used
 (defn- print-enjin
-  [enjin writer]
+  [enjin writer & [print-level]]
   (let [m (->> (keys enjin)
                (map (fn [k] [k (k enjin)]))
                (into {}))]
     (.write writer "#")
     (.write writer (.getName (type enjin)))
     (if-not *print-level*
-      (binding [*print-level* 3]
+      (binding [*print-level* (or print-level 3)]
         (#'clojure.core/pr-on m writer))
       (#'clojure.core/pr-on m writer))))
 
@@ -311,7 +311,7 @@
 
 (defmethod print-method enjin-fixref-proxy
   [enjin writer]
-  (print-enjin enjin writer))
+  (print-enjin enjin writer 4))
 
 (defmethod print-dup simple-enjin
   [enjin writer]
@@ -319,4 +319,4 @@
 
 (defmethod print-dup enjin-fixref-proxy
   [enjin writer]
-  (print-enjin enjin writer))
+  (print-enjin enjin writer 4))

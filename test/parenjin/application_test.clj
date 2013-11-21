@@ -138,17 +138,15 @@
     (enj/create-job ..bar-enjin.. :barjob1) => ..barjob1..))
 
 (fact "create-application-job should bork if a non-existent enjin is referenced"
-  (#'app/create-application-job {:foo ..foo-enjin.. :bar ..bar-enjin..} [[:foo :foojob1] [:baz :barjob1]]) =>
-  (throws #"non-existent enjin.*:baz")
-  (provided
-    (enj/create-job ..foo-enjin.. :foojob1) => ..foojob1..))
+  (let [enjins {:foo (enj/map->simple-enjin {:jobs* {:foojob1 ..foojob1..}})}]
+    (try
+      (#'app/create-application-job enjins [[:foo :foojob1] [:bar :barjob1]])
+      (catch Exception e (ex-data e))) => {:enjin-id :bar :job-id :barjob1}))
 
 (fact "create-application-job should bork if a non-existent job is referenced"
-  (#'app/create-application-job {:foo ..foo-enjin.. :bar ..bar-enjin..} [[:foo :foojob1] [:bar :barjob1]]) =>
-  (throws #"non-existent job.*:barjob1")
-  (provided
-    (enj/create-job ..foo-enjin.. :foojob1) => ..foojob1..
-    (enj/create-job ..bar-enjin.. :barjob1) => nil))
+  (let [enjins {:foo (enj/map->simple-enjin {:jobs* {:foojob1 ..foojob1..}})}]
+    (#'app/create-application-job enjins [[:foo :foojob2]]) =>
+    (throws #"job-fn arg is not a fn")))
 
 (fact "create-application-jobs should create a map of application-jobs"
   (#'app/create-application-jobs
@@ -164,24 +162,29 @@
              (enj/create-job ..bar-enjin.. :barjob1) => ..barjob1..
              (enj/create-job ..bar-enjin.. :barjob2) => ..barjob2..))
 
+(declare ..job1..)
+(def v (-> (enjm/create-enjin-model :foos)
+           (enjm/requires-param :tag String)
+           (enjm/defjob :job1 ..job1..)))
 
 (with-state-changes [(around :facts (let [conn {:aconn ..aconn.. :bconn ..bconn..}
-                                          spec {:enjins {:foomsA {:model n
+                                          spec {:enjins {:foomsA {:model v
                                                                   :params {:tag "foomsA"}
                                                                   :webservices [:foo :bar]}
-                                                         :foomsB {:model n
+                                                         :foomsB {:model v
                                                                   :params {:tag "foomsB"}
                                                                   :webservices [:bar :baz]}}
-                                                :jobs {:dostuff [[:foomsA :foomsAjob1]]
-                                                       :otherstuff [[:foomsB :foomsBjob1]]}}
+                                                :jobs {:dostuff [[:foomsA :job1]]
+                                                       :otherstuff [[:foomsB :job1]]}}
                                           app-promise (promise)
                                           enjs (#'app/create-enjins conn app-promise spec)
                                           foomsA (:foomsA enjs)
                                           foomsB (:foomsB enjs)]
                                       ?form))]
-  (fact "create-application* should create an application from a specification"
-    (app-spec (#'app/create-application* conn spec)) => spec
+  (fact "create-application* should make the app-spec available"
+    (app-spec (#'app/create-application* conn spec)) => spec)
 
+  (fact "create-application* should create enjins"
     (enjins (#'app/create-application* conn spec)) => enjs
     (provided
       (#'app/create-enjins conn anything spec) => enjs))
@@ -190,14 +193,14 @@
     (-> (#'app/create-application* conn spec) (job :dostuff) set) => (set [..foomsAjob1..])
     (provided
       (#'app/create-enjins conn anything spec) => enjs
-      (enj/create-job foomsA :foomsAjob1) => ..foomsAjob1..
-      (enj/create-job foomsB :foomsBjob1) => ..foomsBjob1..)
+      (enj/create-job foomsA :job1) => ..foomsAjob1..
+      (enj/create-job foomsB :job1) => ..foomsBjob1..)
 
     (-> (#'app/create-application* conn spec) (job :otherstuff) set) => (set [..foomsBjob1..])
     (provided
       (#'app/create-enjins conn anything spec) => enjs
-      (enj/create-job foomsA :foomsAjob1) => ..foomsAjob1..
-      (enj/create-job foomsB :foomsBjob1) => ..foomsBjob1..)))
+      (enj/create-job foomsA :job1) => ..foomsAjob1..
+      (enj/create-job foomsB :job1) => ..foomsBjob1..)))
 
 
 (def app-param-ref-spec {:enjins {:A {:model n

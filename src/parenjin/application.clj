@@ -106,11 +106,8 @@
   [enjins enjin-jobs]
   (->> enjin-jobs
        (map (fn [[enjin-id job-id]]
-              (let [enjin (enjins enjin-id)
-                    _ (if-not enjin (throw (RuntimeException. (<< "application jobs reference non-existent enjin: ~{enjin-id}"))))
-                    job (enj/create-job enjin job-id)
-                    _ (if-not job (throw (RuntimeException. (<< "application jobs reference non-existent job: ~{enjin-id}.~{job-id}"))))]
-                job)))
+              (util/with-ex-info {:enjin-id enjin-id :job-id job-id}
+                (enj/create-job (get enjins enjin-id) job-id))))
        (into [])))
 
 (defn- create-application-jobs
@@ -151,7 +148,7 @@
   (enjin [this id] (enjin (create this) id))
 
   (create-web-routes [this] (create-web-routes (create this)))
-  (job [this id] (job app* id))
+  (job [this id] (job (create this) id))
 
   ApplicationProxy
 
