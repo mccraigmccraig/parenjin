@@ -34,16 +34,20 @@
   (let [f (-?> track-ref deref deref)]
     (util/future-status @track-ref)))
 
-(defrecord job [enjin-promise* track-ref* job-fn*]
+(defrecord job [enjin* track-ref* job-fn*]
     Job
-  (start [this] (start-or-noop enjin-promise* track-ref* job-fn*))
+  (start [this] (start-or-noop enjin* track-ref* job-fn*))
   (stop [this] (stop-or-noop track-ref*))
   (status [this] (util/future-status @track-ref*))
   (join [this] (join-or-noop track-ref*)))
 
 (defn create-job
   [enjin job-fn]
-  (map->job {:enjin-promise* enjin (ref nil) job-fn}))
+  (if-not enjin (throw (RuntimeException. "no enjin")))
+  (if-not job-fn (throw (RuntimeException. "no job-fn")))
+  (map->job {:enjin* enjin
+             :track-ref* (ref nil)
+             :job-fn* job-fn}))
 
 (defn run-jobs-parallel
   "kick off all jobs in parallel. returns immediately"
