@@ -191,13 +191,14 @@
   (webservices [this] (with-fixref-proxy-app-refs this (webservices enjin*)))
   (create-webservice [this webservice-id]
     (with-fixref-proxy-app-refs this
-      ((get (webservices this) webservice-id))))
+      ((get (webservices this) webservice-id) this)))
   (create-webservices [this webservice-ids]
     (with-fixref-proxy-app-refs this
       (map-over-ids this create-webservice webservice-ids (keys (webservices this)))))
 
   (jobs [this] (with-fixref-proxy-app-refs this (jobs enjin*)))
-  (create-job [this id] (job/create-job this (get (jobs this) id)))
+  (create-job [this id] (util/with-ex-info "can't create job" {:job-id id}
+                          (job/create-job this (get (jobs this) id))))
 
   (enjins [this] enjin-proxies*)
   (enjin [this id] @(enjin-proxies* id)))
@@ -267,13 +268,14 @@
 
         pmodel (enjm/persist-model model)
         webservices (:webservices pmodel)
+        jobs (:jobs pmodel)
         enj (create-simple-enjin* :model pmodel
                                   :application-promise application-promise
                                   :params literal-or-resolver-params
                                   :connectors connectors
                                   :enjins literal-or-resolver-enjins
                                   :webservices webservices
-                                  :jobs {})]
+                                  :jobs jobs)]
 
     (create-enjin-fixref-proxy pmodel application-promise fixed-app-refs enj)))
 

@@ -137,7 +137,7 @@
                                   :connectors {:conn-a ..conn-a.. :conn-b ..conn-b..}
                                   :enjins {:ds-a ..ds-a.. :ds-b ..ds-b..}
                                   :webservices {:ws-a ..ws-a.. :ws-b ..ws-b..}
-                                  :jobs {}) => ..ds..)))
+                                  :jobs {:job-a ..job-a.. :job-b ..job-b..}) => ..ds..)))
 
 (fact "create-enjin should store any fixed app-refs in the proxy"
   (let [m (enjm/create-enjin-model :foo)
