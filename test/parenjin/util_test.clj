@@ -91,3 +91,24 @@
 (fact "merge-check-disjoint should merge if keysets are not disjoint but values
        related to intersecting keys are identical"
   (merge-check-disjoint {:foo 10 :bar 20} {:foo 10 :baz 30}) => {:foo 10 :bar 20 :baz 30})
+
+(fact "with-ex-info* should decorate a exceptions with supplied info"
+  (try
+    (with-ex-info* "foo" {:foo ..foo-data..}
+      (fn []
+        (with-ex-info* "bar" {:bar ..bar-data..}
+          (fn []
+            (throw (RuntimeException. "boo"))))))
+    (catch Exception e
+      [(.getMessage e) (ex-data e)])) => ["foo" {:foo ..foo-data.. :bar ..bar-data..}])
+
+(fact "with-ex-info* should return the result of the function if no exception is thrown"
+  (with-ex-info* "foo" {:foo ..foo-data..} (fn [] ..result..)) => ..result..)
+
+(fact "with-ex-info should decorate exceptions"
+  (try
+    (with-ex-info "foo" {:foo ..foo-data..}
+      (with-ex-info "bar" {:bar ..bar-data..}
+        (throw (RuntimeException. "boo"))))
+    (catch Exception e
+      [(.getMessage e) (ex-data e)])) => ["foo" {:foo ..foo-data.. :bar ..bar-data..}])

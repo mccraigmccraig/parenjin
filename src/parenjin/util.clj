@@ -115,3 +115,15 @@
     clojure.lang.IDeref
     (deref [this]
       (f))))
+
+(defn with-ex-info*
+  "add ExceptionInfo to any exception coming out of function f"
+  [msg map f]
+  (try
+    (f)
+    (catch Exception e
+      (throw (ex-info msg (merge (ex-data e) map))))))
+
+(defmacro with-ex-info
+  [msg map & forms]
+  `(with-ex-info* ~msg ~map (fn [] ~@forms)))
