@@ -208,27 +208,28 @@
 (defn- resolve-and-merge-refs
   "resolve an EnjinFixrefProxy from an IDeref (Delay or ApplicationRefResolver), then create
    a new EnjinFixrefProxy with merged app-refs"
-  [pmodel app-promise app-refs id req-type enjin-proxy-ref-or-delay]
+  [app-promise app-refs id req-type enjin-proxy-ref-or-delay]
   (aref/with-app-refs (deref app-promise 0 nil) app-refs
     (if-let [resolved @enjin-proxy-ref-or-delay]
-      (let [enj-type (get-in (model resolved) [:model-type])
+      (let [resolved-model (model resolved)
+            enj-type (get-in resolved-model [:model-type])
             _ (check-enjin-type id req-type enj-type)]
         (map->enjin-fixref-proxy
          {:application-promise* app-promise
           :app-refs* (util/merge-check-disjoint app-refs (:app-refs* resolved))
           :enjin* (:enjin* resolved)
-          :enjin-proxies* (dependent-enjin-proxies pmodel app-promise app-refs (:enjin-proxies* resolved))}))
+          :enjin-proxies* (dependent-enjin-proxies resolved-model app-promise app-refs (:enjin-proxies* resolved))}))
       (check-enjin-type id req-type nil))))
 
 (defn- dependent-enjin-proxy
   "different strategies for dependent enjin proxy merging... if it's a plain reference, then do it once,
    but if it's a dynamic reference, do it every time"
-  [pmodel app-promise app-refs id req-type enjin-proxy-ref-or-delay]
+  [app-promise app-refs id req-type enjin-proxy-ref-or-delay]
   (if (instance? ApplicationRefResolver enjin-proxy-ref-or-delay)
     (util/ideref-clojure
-     (fn [] (resolve-and-merge-refs pmodel app-promise app-refs id req-type enjin-proxy-ref-or-delay))) ;; resolve on every deref
+     (fn [] (resolve-and-merge-refs app-promise app-refs id req-type enjin-proxy-ref-or-delay))) ;; resolve on every deref
     (delay
-     (resolve-and-merge-refs pmodel app-promise app-refs id req-type enjin-proxy-ref-or-delay)))) ;; resolve once
+     (resolve-and-merge-refs app-promise app-refs id req-type enjin-proxy-ref-or-delay)))) ;; resolve once
 
 (defn- dependent-enjin-proxies
   "given a map of dependent enjins, each either a Delay or an ApplicationRefResolver,
@@ -236,7 +237,7 @@
   [pmodel app-promise app-refs enjin-proxy-ref-or-delays]
   (->> enjin-proxy-ref-or-delays
        (map (fn [[id enjin-proxy-ref-or-delay]]
-              [id (dependent-enjin-proxy pmodel app-promise app-refs id (-> pmodel :enjin-reqs id) enjin-proxy-ref-or-delay)]))
+              [id (dependent-enjin-proxy app-promise app-refs id (-> pmodel :enjin-reqs id) enjin-proxy-ref-or-delay)]))
        (into {})))
 
 (defn- create-enjin-fixref-proxy
