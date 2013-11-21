@@ -61,6 +61,12 @@
     (-> job :track-ref* type) => clojure.lang.Ref
     (-> job :track-ref* deref) => nil))
 
+(fact "create-job should bork if enjin is not an enjin"
+  (create-job nil (fn [] ..result..)) => (throws #"enjin arg is not an enjin"))
+
+(fact "create-job should bork if job-fn is not a function"
+  (create-job ..enjin.. nil) => (throws #"job-fn arg is not a fn"))
+
 (fact "run-jobs-parallel should start all jobs in parallel"
   (run-jobs-parallel [..job1.. ..job2..]) => [..job1-status.. ..job2-status..]
   (provided

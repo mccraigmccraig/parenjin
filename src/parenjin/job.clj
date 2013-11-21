@@ -2,7 +2,8 @@
   (:use clojure.core.incubator
         midje.sweet
         midje.open-protocols)
-  (:require [parenjin.util :as util]))
+  (:require [parenjin.util :as util])
+  (:import [parenjin]))
 
 (defprotocol Job
   (start [this])
@@ -43,8 +44,8 @@
 
 (defn create-job
   [enjin job-fn]
-  (if-not enjin (throw (RuntimeException. "no enjin")))
-  (if-not job-fn (throw (RuntimeException. "no job-fn")))
+  (if-not enjin (throw (ex-info "enjin arg is not an enjin!" {:enjin enjin :job-fn job-fn})))
+  (if-not job-fn (throw (ex-info "job-fn arg is not a fn!" {:enjin enjin :job-fn job-fn})))
   (map->job {:enjin* enjin
              :track-ref* (ref nil)
              :job-fn* job-fn}))
