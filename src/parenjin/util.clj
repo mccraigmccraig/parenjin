@@ -118,12 +118,12 @@
 
 (defn with-ex-info*
   "add ExceptionInfo to any exception coming out of function f"
-  [msg map f]
+  [map f]
   (try
     (f)
     (catch Exception e
-      (throw (ex-info msg (merge (ex-data e) map))))))
+      (throw (ex-info (.getMessage e) (merge (ex-data e) map) e)))))
 
 (defmacro with-ex-info
-  [msg map & forms]
-  `(with-ex-info* ~msg ~map (fn [] ~@forms)))
+  [map & forms]
+  `(with-ex-info* ~map (fn [] ~@forms)))
