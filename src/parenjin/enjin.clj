@@ -197,7 +197,7 @@
       (map-over-ids this create-webservice webservice-ids (keys (webservices this)))))
 
   (jobs [this] (with-fixref-proxy-app-refs this (jobs enjin*)))
-  (create-job [this id] (util/with-ex-info "can't create job" {:job-id id}
+  (create-job [this id] (util/with-ex-info {:job-id id}
                           (job/create-job this (get (jobs this) id))))
 
   (enjins [this] enjin-proxies*)
