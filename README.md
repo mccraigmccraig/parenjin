@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/mccraigmccraig/parenjin.png?branch=master)](https://travis-ci.org/mccraigmccraig/parenjin)
 
-An Inversion of Control (IoC) container aimed at Compojure web apps, with dynamic parameter and dependency management
+A component container aimed at Compojure web apps, with dynamic parameter and dependency management
 
 * An application is decomposed into Enjins
 * Each Enjin defines it's runtime requirements as an EnjinModel, which is created with a DSL
