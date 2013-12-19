@@ -2,50 +2,98 @@
 
 [![Build Status](https://travis-ci.org/mccraigmccraig/parenjin.png?branch=master)](https://travis-ci.org/mccraigmccraig/parenjin)
 
-Parameterisable application Engines for Compojure
+An Inversion of Control (IoC) container aimed at Compojure web apps, with dynamic parameter and dependency management
 
-Decompose your application into Enjins, then construct Applications by declaratively wiring Enjins together with configuration parameters and connectors
+* An application is decomposed into Enjins
+* Each Enjin defines it's runtime requirements as an EnjinModel, which is created with a DSL
+* Instances of Enjins are created and wired together at runtime by an application specification, which is just a map
+* Enjin parameters can be wired to dynamic Application parameters
+* Enjin parameters can be declaratively fixed for some Enjin, which fixes them also
+  for that Enjin's dependencies
+* Application jobs can be defined as sequences of Enjin jobs (delcared functions of an Enjin instance).
+  Application jobs can be run in serial or parallel
 
-This helps with :
+## EnjinModel
 
-* sharing data resources cleanly inside an application
-* building multiple applications on the same platform which share some resources
-* multi-tenant applications, where each tenant's view can be defined by some configuration
+An EnjinModel specifies the runtime requirements of Enjin instances created from it
 
-An Application consists of :
+* parameters : to be provided at application assembly time, or runtime
+* connectors : arbitrary, generally heavyweight, objects to be resolved at application assembly time
+* Enjin dependencies : other Enjins, with resolutions defined at application assembly time, or runtime
+* webservices : functions of a single Enjin parameter which return Compojure routes
+* jobs : functions of a single Enjin parameter
 
-* a specification : a clojure datastructure defining how to construct the Application
-* some Enjins : the Applications's Enjins and their dependencies are resolved in the specification. circular dependencies are permitted
+A DSL is provided to create EnjinModels
 
-The application specification is a clojure datastructure which defines how the Application is to construct and connect it's Enjins, and which webservices from which Enjin's are to be exposed
+    (require '[parenjin.enjin :as enj])
+    (require '[parenjin.enjin-model :as enjm])
+    (require '[compojure.core :as compojure])
 
-* `:enjins` is a map of Enjin specifications
+    (def m (enjm/create-enjin-model :foo))
+    (-> m
+        (enjm/requires-param :prefix [nil String])                 ;; :prefix param is nil or a string
+        (enjm/requires-param :bar)                                 ;; :bar param is unchecked
+        (enjm/requires-connector :postgresql javax.sql.DataSource) ;; :postgresql connector is a javax.sql.Datasource
+        (enjm/requires-enjin :twitter :twitter-datasource)         ;; :twitter enjin has type :twitter-datasource
 
-For each Enjin specification
+        (enjm/defwebservice :show-foos (fn [enjin] (routes (GET (str (enj/param enjin :bar) "/:foo-id" [foo-id] {:foo-id foo-id})))))
 
-* `:model` refers to an EnjinModel, which defines the Enjins requirements
-* `:connectors` specifies how the Enjin connector requirements are to be satisfied from the application's `:connectors` map
-* `:params` provides values to satisfy the Enjin param requirements. the #app/ref reader-macro can be used to create an application reference,
-   which can be set dynamically. All references (from any Enjin in the same application) to the same application reference refer to the
-   same value, so Enjins can be declared to share dynamic parameters
-* `:enjins` specifies how the Enjin dependency requirements are to be satisfied from the application's `:enjins`. an Enjin dependency may be
-   set as an application reference, so one Enjin can dynamically satisfy the Enjin dependencies of another
-* `:webservices` specifies :none, :all or a list of webservice-ids for Enjin webservices to be included in the application webservice from create-webservice
+        (enjm/defjob :update foo/update))
+
+## Application
+
+An Application specification is a map which defines how Enjin instances are to be created and how their runtime requirements are to be resolved
+
+### Connectors
+
+Connectors are resolved from a map supplied at Application assembly time
+
+### Parameters
+
+Parameters can be resolved in several ways :
+
+* static : a static value
+* #app/ref : a dynamic reference to an application parameter : can be set in code or by an #app/fix-ref
+* #app/fix-ref : fixes a reference to an application parameter for an Enjin and all it's dependencies
+
+### Enjin dependencies
+
+Enjin dependencies can be resolved in several ways :
+
+* static : a static referene to another Enjin in the Application
+* #app/ref : a dynamic reference to another Enjin : can be set in code or by an #app/fix-ref
+* #app/fix-ref : fixes a reference to an application parameter for an Enjin and all it's dependencies
+
+### Webservices
+
+Webservices declared in Enjins can be declaratively mapped into an Application webservice
+
+### Jobs
+
+Application jobs are a sequence of Enjin Job mappings, specified as a sequence of [:enjin-key :enjin-job-key] pairs. Application Jobs
+can be run in two ways :
+
+* in serial : a Job is started after the previous Job in the sequence finishes
+* in parallel : all Jobs in the sequence are started simultaneously on different Threads
 
         (require '[parenjin.application :as app])
+        (require '[parenjin.job :as job])
 
         (def app-spec {:enjins {:twitter {:model :my-project.enjins.twitter/model
                                           :connectors {:postgresql :postgresql}    ;; maps a connector from the registry to the Enjin's id
-                                          :params {:prefix #app/ref :app-prefix} ;; references the application param :app-prefix
+                                          :params {:prefix #app/ref :app-prefix}   ;; references the application param :app-prefix
                                           :webservices :all}                       ;; mount all of the Enjin's webservices
 
                                 :foos {:model m
                                        :connectors {:postgresql :postgresql}
-                                       :params {:prefix #app/ref :app-prefix ;; references the application param :app-prefix
+                                       :params {:prefix #app/fix-ref [:app-prefix "FOOP"] ;; fixes the application param :app-prefix to "FOOP" for this
+                                                                                          ;; Enjin instance, *and* it's dependencies
                                                 :bar "myproject"}              ;; provides a literal value
                                        :enjins {:twitter :twitter}             ;; maps the :twitter Enjin above to the Enjin's :twitter dependency
                                        :webservices [:show-foos]}}             ;; mount just one of the Enjin's webservices
-                               })
+
+                       :jobs {:update [[:foos :update]]
+                               }})
 
         (def app (app/create-application connectors app-spec))
 
@@ -56,42 +104,23 @@ For each Enjin specification
         (def twitter (app/enjin app :twitter))
         (def foos (app/enjin app :foos))
 
-        (enj/with-params foos {:prefix "BOO"}
-          (enj/param foos :prefix)     ;; => "BOO" ;; Enjin reference params can be set dynamically
-          (enj/param twitter :prefix)  ;; => "BOO" ;; and all other Enjins sharing the same reference param will see the value
-        )
+        ;; setting an application param dynamically
+        (enj/with-params twitter {:prefix "BOO"}
+          (enj/param twitter :prefix)) ;; => "BOO"
 
-Enjins and Applications are lightweight objects, and can reasonably be constructed on every request : All the heavyweight objects belong to the connectors registry or the EnjinModels
+        ;; application param is declaratively fixed for an Enjin and it's dependencies
+        (enj/param foos :prefix) ;; => "FOOP"
+        (def foos-twitter (enj/enjin foos :twitter))
+        (enj/param foos-twitter :prefix) ;; => "FOOP"
 
-An EnjinModel defines :
-
-* the parameters an Enjin requires
-* the connectors an Enjin requires
-* the dependent Enjins an Enjin requires
-* the webservices : functions of a single (Enjin) parameter which return Compojure routes
-
-A DSL is provided to create EnjinModels
-
-    (require '[parenjin.enjin :as enj])
-    (require '[parenjin.enjin-model :as enjm])
-    (require '[compojure.core :as compojure])
-
-    (def m (enjm/create-enjin-model :foo))
-    (-> m
-        (enjm/requires-param :prefix String)
-        (enjm/requires-param :bar String)
-        (enjm/requires-connector :postgresql javax.sql.DataSource)
-        (enjm/requires-enjin :twitter :twitter-datasource)
-
-        (enjm/defwebservice :show-foos (fn [enjin] (routes (GET (str (enj/param enjin :bar) "/:foo-id" [foo-id] {:foo-id foo-id}))))))
-
-
+        ;; run the :update job serially
+        (job/run-jobs-serial (app/job app :update))
 
 ## Usage
 
 Include the clojars dependency
 
-    (parenjin "0.3.0-SNAPSHOT")
+    (parenjin "0.4.0
 
 ## License
 
