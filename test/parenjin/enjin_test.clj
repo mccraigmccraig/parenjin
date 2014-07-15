@@ -103,7 +103,7 @@
 (fact "create-webservices should create some compojure routes"
   (let [ds (fsd {:webservices {:foo (fn [enjin] enjin =not=> nil ..foo-webservice..)
                                :bar (fn [enjin] enjin =not=> nil ..bar-webservice..)}})]
-    (create-webservices ds [:foo :bar]) => [..foo-webservice.. ..bar-webservice..]))
+    (set (create-webservices ds [:foo :bar])) => (set [..foo-webservice.. ..bar-webservice..])))
 
 (with-state-changes [(around :facts (let [ds (fsd {:jobs {:foo ..foo-job-fn.. :bar ..bar-job-fn..}})]
                                       ?form))]
