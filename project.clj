@@ -9,7 +9,7 @@
     ])
 
 
-(defproject parenjin "0.4.2"
+(defproject parenjin "0.4.3"
   :description "parenjin : Parameterisable Application Engines for Compojure"
 
   :license {:name "Eclipse Public License"
@@ -34,7 +34,7 @@
   :dependencies ~(conj shared '[org.clojure/clojure "1.6.0"])
 
   :aliases {"with-all-dev" ["with-profile" "1.4,dev:1.5,dev:1.6,dev"]}
-  :profiles {:dev {:dependencies [[midje "1.6-beta1"]]}
+  :profiles {:dev {:dependencies [[midje "1.6.3"]]}
              :production {}
              :1.4 {:dependencies [[org.clojure/clojure "1.4.0"]]}
              :1.5 {:dependencies [[org.clojure/clojure "1.5.1"]]}
