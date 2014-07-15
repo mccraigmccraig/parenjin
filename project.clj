@@ -27,7 +27,7 @@
              "-XX:+CMSClassUnloadingEnabled"
              "-XX:+UseConcMarkSweepGC"]
 
- :repl-options {:nrepl-middleware [lighttable.nrepl.handler/lighttable-ops]}
+ :repl-options {:nrepl-middleware []}
 
   :plugins [[lein-midje "3.1.3"]]
 
