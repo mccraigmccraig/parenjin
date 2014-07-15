@@ -9,7 +9,7 @@
     ])
 
 
-(defproject parenjin "0.4.0"
+(defproject parenjin "0.4.1"
   :description "parenjin : Parameterisable Application Engines for Compojure"
 
   :license {:name "Eclipse Public License"
