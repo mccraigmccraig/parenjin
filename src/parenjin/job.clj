@@ -1,5 +1,6 @@
 (ns parenjin.job
   (:use clojure.core.incubator
+        midje.sweet
         midje.open-protocols)
   (:require [parenjin.util :as util])
   (:import [parenjin]))

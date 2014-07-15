@@ -27,14 +27,14 @@
              "-XX:+CMSClassUnloadingEnabled"
              "-XX:+UseConcMarkSweepGC"]
 
- :repl-options {:nrepl-middleware []}
+  :repl-options {:nrepl-middleware []}
 
   :plugins [[lein-midje "3.1.3"]]
 
   :dependencies ~(conj shared '[org.clojure/clojure "1.6.0"])
 
   :aliases {"with-all-dev" ["with-profile" "1.4,dev:1.5,dev:1.6,dev"]}
-  :profiles {:dev {:dependencies [[midje "1.6.3"]]}
+  :profiles {:dev {:dependencies [[midje "1.6-beta1"]]}
              :production {}
              :1.4 {:dependencies [[org.clojure/clojure "1.4.0"]]}
              :1.5 {:dependencies [[org.clojure/clojure "1.5.1"]]}

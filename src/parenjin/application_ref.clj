@@ -1,5 +1,6 @@
 (ns parenjin.application-ref
-  (:use midje.open-protocols
+  (:use midje.sweet
+        midje.open-protocols
         clojure.core.strint)
   (:require [parenjin.application-proxy :as aproxy]
             [clojure.set :as set]

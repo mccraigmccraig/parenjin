@@ -1,5 +1,5 @@
 (ns parenjin.enjin-model
-  (:use midje.open-protocols)
+  (:use midje.sweet midje.open-protocols)
   (:require [parenjin.util :as util]))
 
 (defprotocol EnjinModel
