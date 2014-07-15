@@ -1,6 +1,5 @@
 (ns parenjin.application
   (:use clojure.core.strint
-        midje.sweet
         midje.open-protocols
         potemkin)
   (:require [compojure.core :as compojure]

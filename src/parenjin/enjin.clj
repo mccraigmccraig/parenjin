@@ -1,6 +1,5 @@
 (ns parenjin.enjin
-  (:use midje.sweet
-        midje.open-protocols
+  (:use midje.open-protocols
         clojure.core.strint
         clojure.core.incubator
         potemkin)
