@@ -9,7 +9,7 @@
                                           trackref (ref nil)]
                                          ?form ))]
   (fact "start-or-noop should start a never started task"
-    (#'job/start-or-noop ..enjin.. trackref (fn [enjin] enjin => ..enjin.. (deliver result ..result..) (Thread/sleep 100))) => :running
+    (#'job/start-or-noop ..enjin.. trackref (fn [enjin] enjin => ..enjin.. (deliver result ..result..) (Thread/sleep 1000))) => :running
     (deref result 0 ..fail..) => ..result..))
 
 (with-state-changes [(around :facts (let [result (promise)
