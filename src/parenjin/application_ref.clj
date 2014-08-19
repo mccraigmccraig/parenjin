@@ -6,15 +6,15 @@
             [clojure.set :as set]
             [clojure.tools.logging :as log]
             [parenjin.util :as util])
-  (:import [parenjin.application_proxy ApplicationProxy]))
+  (:import [parenjin.application_proxy ApplicationProxyProtocol]))
 
 ;; app-refs refer to application variables
 
-(defprotocol ApplicationRef
+(defprotocol ApplicationRefProtocol
   (ref-name [this]))
 
 (defrecord-openly application-ref [ref-name*]
-  ApplicationRef
+  ApplicationRefProtocol
   (ref-name [this] ref-name*))
 
 (defn application-ref-reader
@@ -30,13 +30,13 @@
 
 ;; app-fix-refs specify the value of an application variable in some context
 
-(defprotocol ApplicationFixRef
+(defprotocol ApplicationFixRefProtocol
   (fix-ref-name [this])
   (fix-ref-value [this])
   (fix-app-ref [this]))
 
 (defrecord-openly application-fix-ref [fix-ref-name* fix-ref-value*]
-  ApplicationFixRef
+  ApplicationFixRefProtocol
   (fix-ref-name [this] fix-ref-name*)
   (fix-ref-value [this] fix-ref-value*)
   (fix-app-ref [this] (map->application-ref {:ref-name* fix-ref-name*})))
@@ -47,7 +47,7 @@
 
 ;; ref-resolver is an IDeref which looks up an application variable (when @/deref'ed)
 
-(defprotocol ApplicationRefResolver
+(defprotocol ApplicationRefResolverProtocol
   (get-app-promise [this])
   (get-ref-name [this]))
 
@@ -64,13 +64,13 @@
             (throw (RuntimeException. (<< "ref-resolver has not had application delivered: ~(ref-name ref)"))))
           (resolve-ref app (ref-name ref))))
 
-      ApplicationRefResolver
+      ApplicationRefResolverProtocol
       (get-app-promise [this] app-promise)
       (get-ref-name [this] (ref-name ref))))
 
 (defn- unwrap-application
   [app]
-  (if (instance? ApplicationProxy app)
+  (if (instance? ApplicationProxyProtocol app)
     @(:app* app)
     app))
 

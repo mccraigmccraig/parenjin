@@ -2,7 +2,7 @@
   (:use midje.sweet midje.open-protocols)
   (:require [parenjin.util :as util]))
 
-(defprotocol EnjinModel
+(defprotocol EnjinModelProtocol
   "EnjinModel is a factory for Enjins of a particular type. an EnjinModel has
      - model-type : a unique identifier for the EnjinModel
      - param-requirements : a map of {param-id type} which defines the ids of required parameters,
@@ -52,7 +52,7 @@
 (defrecord-openly enjin-model
   [model-type* param-reqs* connector-reqs* enjin-reqs* webservices* jobs*]
 
-  EnjinModel
+  EnjinModelProtocol
   (model-type [this]
     model-type*)
 

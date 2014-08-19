@@ -11,8 +11,8 @@
             [parenjin.enjin-model :as enjm]
             [parenjin.enjin-ref-param :as enjrp]
             [parenjin.application-ref :as aref])
-  (:import [parenjin.enjin_model EnjinModel]
-           [parenjin.application_ref ApplicationRefResolver]))
+  (:import [parenjin.enjin_model EnjinModelProtocol]
+           [parenjin.application_ref ApplicationRefResolverProtocol]))
 
 (def ^:private check-requirements-arg-specs
   {:model true
@@ -50,7 +50,7 @@
        (map (fn [id] (f this id)))
        doall))
 
-(defprotocol Enjin
+(defprotocol EnjinProtocol
   "Enjin : an enjin with a particular schema, which has a bunch of connectors, a bunch
    of enjin dependcies, and a bunch of webservices"
 
@@ -116,7 +116,7 @@
   true)
 
 (defrecord-openly simple-enjin [model* application-promise* params* connectors* enjins* webservices* jobs*]
-  Enjin
+  EnjinProtocol
   (model [this] model*)
 
   (application [this] (if (and application-promise* (realized? application-promise*))
@@ -178,7 +178,7 @@
 
 ;; enjin-fixref-proxy sets any fixed app-refs before proxying to an enjin implementation
 (defrecord-openly enjin-fixref-proxy [enjin* application-promise* app-refs* enjin-proxies*]
-  Enjin
+  EnjinProtocol
   (model [this] (model enjin*))
   (application [this] (application enjin*))
 
@@ -225,7 +225,7 @@
   "different strategies for dependent enjin proxy merging... if it's a plain reference, then do it once,
    but if it's a dynamic reference, do it every time"
   [app-promise app-refs id req-type enjin-proxy-ref-or-delay]
-  (if (instance? ApplicationRefResolver enjin-proxy-ref-or-delay)
+  (if (instance? ApplicationRefResolverProtocol enjin-proxy-ref-or-delay)
     (util/ideref-clojure
      (fn [] (resolve-and-merge-refs app-promise app-refs id req-type enjin-proxy-ref-or-delay))) ;; resolve on every deref
     (delay

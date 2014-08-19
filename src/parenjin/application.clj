@@ -10,12 +10,12 @@
             [parenjin.enjin-model :as dsm]
             [parenjin.application-proxy :as aproxy]
             [parenjin.application-ref :as aref])
-  (:import [parenjin.application_ref ApplicationRef ApplicationFixRef ApplicationRefResolver]
-           [parenjin.application_proxy ApplicationProxy]))
+  (:import [parenjin.application_ref ApplicationRefProtocol ApplicationFixRefProtocol ApplicationRefResolverProtocol]
+           [parenjin.application_proxy ApplicationProxyProtocol]))
 
 (import-vars [parenjin.application-proxy create destroy create-webservice])
 
-(defprotocol Application
+(defprotocol ApplicationProtocol
 
   "applications combine :
     - connectors
@@ -43,7 +43,7 @@
          (apply concat))))
 
 (defrecord-openly application [app-spec* web-connector* enjins* jobs*]
-  Application
+  ApplicationProtocol
 
   (app-spec [this] app-spec*)
 
@@ -58,10 +58,10 @@
   [enjin-delay-registry-promise enjins]
   (->> enjins
        (map (fn [[dep-id enjin-id]]
-              (cond (instance? ApplicationRef enjin-id)
+              (cond (instance? ApplicationRefProtocol enjin-id)
                     [dep-id enjin-id]
 
-                    (instance?  ApplicationFixRef enjin-id) ;; the fixed value becomes the delay to the enjin
+                    (instance?  ApplicationFixRefProtocol enjin-id) ;; the fixed value becomes the delay to the enjin
                     [dep-id (aref/map->application-fix-ref
                              {:fix-ref-name* (:fix-ref-name* enjin-id)
                               :fix-ref-value* (@enjin-delay-registry-promise (:fix-ref-value* enjin-id))})]
@@ -140,7 +140,7 @@
     (apply compojure/routes (create-web-routes app))))
 
 (defrecord-openly application-proxy [connectors* app-spec* app*]
-  Application
+  ApplicationProtocol
 
   (app-spec [this] app-spec*)
 
@@ -150,7 +150,7 @@
   (create-web-routes [this] (create-web-routes (create this)))
   (job [this id] (job (create this) id))
 
-  ApplicationProxy
+  ApplicationProxyProtocol
 
   (create [this] (swap! app*
                         (fn [old-app] (if-not old-app
