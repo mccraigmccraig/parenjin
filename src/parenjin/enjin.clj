@@ -1,6 +1,6 @@
 (ns parenjin.enjin
-  (:use midje.sweet
-        midje.open-protocols
+  (:use ;; midje.sweet
+        ;; midje.open-protocols
         clojure.core.strint
         clojure.core.incubator
         potemkin)
@@ -115,7 +115,7 @@
     (throw (RuntimeException. (<< "enjin <~{enjin-id}> is of type <~{enj-type}> but is required to be of type <~{req-type}>"))))
   true)
 
-(defrecord-openly simple-enjin [model* application-promise* params* connectors* enjins* webservices* jobs*]
+(defrecord simple-enjin [model* application-promise* params* connectors* enjins* webservices* jobs*]
   EnjinProtocol
   (model [this] model*)
 
@@ -177,7 +177,7 @@
   `(with-fixref-proxy-app-refs* ~fixref-proxy (fn [] ~@forms)))
 
 ;; enjin-fixref-proxy sets any fixed app-refs before proxying to an enjin implementation
-(defrecord-openly enjin-fixref-proxy [enjin* application-promise* app-refs* enjin-proxies*]
+(defrecord enjin-fixref-proxy [enjin* application-promise* app-refs* enjin-proxies*]
   EnjinProtocol
   (model [this] (model enjin*))
   (application [this] (application enjin*))

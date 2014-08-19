@@ -1,7 +1,7 @@
 (ns parenjin.application
   (:use clojure.core.strint
-        midje.sweet
-        midje.open-protocols
+        ;; midje.sweet
+        ;; midje.open-protocols
         potemkin)
   (:require [compojure.core :as compojure]
             [parenjin.util :as util]
@@ -42,7 +42,7 @@
                                        (or (:webservices ds-spec) :all))))
          (apply concat))))
 
-(defrecord-openly application [app-spec* web-connector* enjins* jobs*]
+(defrecord application [app-spec* web-connector* enjins* jobs*]
   ApplicationProtocol
 
   (app-spec [this] app-spec*)
@@ -139,7 +139,7 @@
       (apply compojure/routing request (create-web-routes app)))
     (apply compojure/routes (create-web-routes app))))
 
-(defrecord-openly application-proxy [connectors* app-spec* app*]
+(defrecord application-proxy [connectors* app-spec* app*]
   ApplicationProtocol
 
   (app-spec [this] app-spec*)

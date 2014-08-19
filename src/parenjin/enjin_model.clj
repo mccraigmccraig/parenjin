@@ -1,5 +1,5 @@
 (ns parenjin.enjin-model
-  (:use midje.sweet midje.open-protocols)
+  ;; (:use midje.sweet midje.open-protocols)
   (:require [parenjin.util :as util]))
 
 (defprotocol EnjinModelProtocol
@@ -49,7 +49,7 @@
    [:webservices* :webservices]
    [:jobs* :jobs]])
 
-(defrecord-openly enjin-model
+(defrecord enjin-model
   [model-type* param-reqs* connector-reqs* enjin-reqs* webservices* jobs*]
 
   EnjinModelProtocol

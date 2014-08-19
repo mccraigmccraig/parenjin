@@ -1,6 +1,6 @@
 (ns parenjin.application-ref
-  (:use midje.sweet
-        midje.open-protocols
+  (:use ;; midje.sweet
+        ;; midje.open-protocols
         clojure.core.strint)
   (:require [parenjin.application-proxy :as aproxy]
             [clojure.set :as set]
@@ -13,7 +13,7 @@
 (defprotocol ApplicationRefProtocol
   (ref-name [this]))
 
-(defrecord-openly application-ref [ref-name*]
+(defrecord application-ref [ref-name*]
   ApplicationRefProtocol
   (ref-name [this] ref-name*))
 
@@ -35,7 +35,7 @@
   (fix-ref-value [this])
   (fix-app-ref [this]))
 
-(defrecord-openly application-fix-ref [fix-ref-name* fix-ref-value*]
+(defrecord application-fix-ref [fix-ref-name* fix-ref-value*]
   ApplicationFixRefProtocol
   (fix-ref-name [this] fix-ref-name*)
   (fix-ref-value [this] fix-ref-value*)

@@ -1,11 +1,12 @@
 (ns parenjin.job
   (:use clojure.core.incubator
-        midje.sweet
-        midje.open-protocols)
+        ;; midje.sweet
+        ;; midje.open-protocols
+        )
   (:require [parenjin.util :as util])
   (:import [parenjin]))
 
-(defprotocol Job
+(defprotocol JobProtocol
   (start [this])
   (stop [this])
   (status [this])
@@ -36,7 +37,7 @@
     (util/future-status @track-ref)))
 
 (defrecord job [enjin* track-ref* job-fn*]
-    Job
+    JobProtocol
   (start [this] (start-or-noop enjin* track-ref* job-fn*))
   (stop [this] (stop-or-noop track-ref*))
   (status [this] (util/future-status @track-ref*))
