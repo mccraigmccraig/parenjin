@@ -292,6 +292,16 @@
   [enjin the-params & forms]
   `(with-params* ~enjin ~the-params (fn [] ~@forms)))
 
+(defn fix-params
+  "return a new version of the enjin-proxy with app-references fixed to values
+   specified by the-params"
+  [enjin-proxy the-params]
+  (let [enjin (:enjin* enjin-proxy)
+        app-promise (:application-promise* enjin-proxy)
+        pmodel (:model* enjin)
+        the-app-refs (enjrp/app-refs (params enjin) the-params)]
+    (create-enjin-fixref-proxy pmodel app-promise the-app-refs enjin)))
+
 ;; limit the depth to which a enjin will print, avoiding
 ;; blowing the stack when circular references are used
 (defn- print-enjin
